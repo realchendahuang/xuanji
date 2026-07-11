@@ -6,6 +6,7 @@ import type {
   ChartSnapshot,
   Pillar,
 } from './types'
+import { normalizeBirthTime } from './time'
 
 const STEM_ELEMENT: Record<string, string> = {
   甲: '木',
@@ -66,13 +67,32 @@ function toPillar(label: Pillar['label'], value: string): Pillar {
 
 export async function calculateBazi(
   profile: BirthProfile,
+  methodology: BaziMethodology = {
+    yearBoundary: 'lichun',
+    dayBoundary: '00:00',
+    timeBasis: 'civil',
+    luckCycleVersion: 'dayun-v1',
+    engine: 'tyme4ts',
+  },
 ): Promise<ChartSnapshot> {
-  const [year, month, day] = profile.localDate.split('-').map(Number)
-  const [hour, minute] = profile.localTime.split(':').map(Number)
+  const normalizedTime = normalizeBirthTime(profile, methodology)
+  const [year, month, day] = normalizedTime.calculationDate
+    .split('-')
+    .map(Number)
+  const [hour, minute] = normalizedTime.calculationTime.split(':').map(Number)
   const solar = SolarTime.fromYmdHms(year, month, day, hour, minute, 0)
   const eightChar = solar.getLunarHour().getEightChar()
+  const lunarYear = solar
+    .getLunarHour()
+    .getLunarDay()
+    .getLunarMonth()
+    .getLunarYear()
+    .getSixtyCycle()
+    .toString()
   const values = [
-    eightChar.getYear().toString(),
+    methodology.yearBoundary === 'lunar-new-year'
+      ? lunarYear
+      : eightChar.getYear().toString(),
     eightChar.getMonth().toString(),
     eightChar.getDay().toString(),
     eightChar.getHour().toString(),
@@ -91,12 +111,6 @@ export async function calculateBazi(
     elements[branchElement] += 1
   }
 
-  const methodology: BaziMethodology = {
-    yearBoundary: 'lichun',
-    dayBoundary: '00:00',
-    timeBasis: 'civil',
-    engine: 'tyme4ts',
-  }
   const input = JSON.stringify({ profile, methodology })
   const inputHash = Array.from(
     new Uint8Array(
@@ -120,6 +134,7 @@ export async function calculateBazi(
       lunarText: solar.getLunarHour().getLunarDay().toString(),
       zodiac: ZODIAC[pillars[0].branch] ?? '',
       elements,
+      normalizedTime,
     },
     createdAt: new Date().toISOString(),
   }

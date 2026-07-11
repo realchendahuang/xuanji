@@ -11,6 +11,7 @@ import {
   insertSnapshot,
   listProfiles,
   listReadings,
+  updateProfile,
 } from '../lib/db'
 import { evaluateSnapshot } from '../lib/rules'
 import type { BirthProfile, Reading } from '../lib/types'
@@ -31,7 +32,17 @@ const profileSchema = z.object({
   }),
 })
 
-const chartSchema = z.object({ profileId: z.string().uuid() })
+const chartSchema = z.object({ profileId: z.string().uuid() }).extend({
+  methodology: z
+    .object({
+      yearBoundary: z.enum(['lichun', 'lunar-new-year']).default('lichun'),
+      dayBoundary: z.enum(['23:00', '00:00']).default('00:00'),
+      timeBasis: z.enum(['civil', 'true-solar']).default('civil'),
+      luckCycleVersion: z.string().default('dayun-v1'),
+      engine: z.literal('tyme4ts').default('tyme4ts'),
+    })
+    .optional(),
+})
 const readingSchema = z.object({ snapshotId: z.string().uuid() })
 
 function extractGatewayText(payload: unknown): string {
@@ -66,6 +77,18 @@ export const apiApp = new Hono<{ Bindings: Env }>()
   .get('/profiles', async (c) =>
     c.json({ ok: true, data: await listProfiles(c.env.DB) }),
   )
+  .get('/profiles/:profileId', async (c) => {
+    const profile = await getProfile(c.env.DB, c.req.param('profileId'))
+    if (!profile)
+      return c.json(
+        {
+          ok: false,
+          error: { code: 'PROFILE_NOT_FOUND', message: '出生资料不存在' },
+        },
+        404,
+      )
+    return c.json({ ok: true, data: profile })
+  })
   .post('/profiles', zValidator('json', profileSchema), async (c) => {
     const input = c.req.valid('json')
     const now = new Date().toISOString()
@@ -78,8 +101,32 @@ export const apiApp = new Hono<{ Bindings: Env }>()
     await insertProfile(c.env.DB, profile)
     return c.json({ ok: true, data: profile }, 201)
   })
+  .patch(
+    '/profiles/:profileId',
+    zValidator('json', profileSchema.partial()),
+    async (c) => {
+      const existing = await getProfile(c.env.DB, c.req.param('profileId'))
+      if (!existing)
+        return c.json(
+          {
+            ok: false,
+            error: { code: 'PROFILE_NOT_FOUND', message: '出生资料不存在' },
+          },
+          404,
+        )
+      const input = c.req.valid('json')
+      const profile: BirthProfile = {
+        ...existing,
+        ...input,
+        location: { ...existing.location, ...input.location },
+        updatedAt: new Date().toISOString(),
+      }
+      await updateProfile(c.env.DB, profile)
+      return c.json({ ok: true, data: profile })
+    },
+  )
   .post('/charts/bazi', zValidator('json', chartSchema), async (c) => {
-    const { profileId } = c.req.valid('json')
+    const { profileId, methodology } = c.req.valid('json')
     const profile = await getProfile(c.env.DB, profileId)
     if (!profile)
       return c.json(
@@ -89,7 +136,7 @@ export const apiApp = new Hono<{ Bindings: Env }>()
         },
         404,
       )
-    const snapshot = await calculateBazi(profile)
+    const snapshot = await calculateBazi(profile, methodology)
     await insertSnapshot(c.env.DB, snapshot)
     return c.json({ ok: true, data: snapshot }, 201)
   })

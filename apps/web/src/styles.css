@@ -184,6 +184,33 @@ a {
 .profile-form input:disabled {
   opacity: 0.4;
 }
+.coordinate-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.coordinate-grid label,
+.profile-form fieldset > label {
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+  color: #555955;
+}
+.coordinate-grid input,
+.profile-form select {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #bfc2bd;
+  border-radius: 0;
+  background: transparent;
+  padding: 7px 0 10px;
+  color: var(--ink);
+  outline: none;
+  font-size: 14px;
+}
+.profile-form fieldset > label + label {
+  margin-top: 10px;
+}
 .profile-form legend {
   margin-bottom: 10px;
 }

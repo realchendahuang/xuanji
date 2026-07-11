@@ -1,4 +1,9 @@
-import type { BirthProfile, ChartSnapshot, Reading } from './types'
+import type {
+  BaziMethodology,
+  BirthProfile,
+  ChartSnapshot,
+  Reading,
+} from './types'
 
 type ApiSuccess<T> = { ok: true; data: T }
 type ApiFailure = { ok: false; error: { code: string; message: string } }
@@ -22,10 +27,10 @@ export const api = {
       body: JSON.stringify(input),
     })
   },
-  createBazi(profileId: string) {
+  createBazi(profileId: string, methodology?: BaziMethodology) {
     return request<ChartSnapshot>('/charts/bazi', {
       method: 'POST',
-      body: JSON.stringify({ profileId }),
+      body: JSON.stringify({ profileId, methodology }),
     })
   },
   createReading(snapshotId: string) {

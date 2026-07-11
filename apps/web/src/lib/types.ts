@@ -17,10 +17,20 @@ export type BirthProfile = {
 }
 
 export type BaziMethodology = {
-  yearBoundary: 'lichun'
-  dayBoundary: '00:00'
-  timeBasis: 'civil'
+  yearBoundary: 'lichun' | 'lunar-new-year'
+  dayBoundary: '23:00' | '00:00'
+  timeBasis: 'civil' | 'true-solar'
+  luckCycleVersion: string
   engine: 'tyme4ts'
+}
+
+export type NormalizedBirthTime = {
+  instant: string
+  zonedDateTime: string
+  calculationDate: string
+  calculationTime: string
+  utcOffset: string
+  disambiguation: 'exact' | 'compatible' | 'unknown-noon'
 }
 
 export type Pillar = {
@@ -37,6 +47,7 @@ export type BaziFacts = {
   lunarText: string
   zodiac: string
   elements: Record<'木' | '火' | '土' | '金' | '水', number>
+  normalizedTime: NormalizedBirthTime
 }
 
 export type ChartSnapshot = {

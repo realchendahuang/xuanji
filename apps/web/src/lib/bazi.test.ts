@@ -46,4 +46,26 @@ describe('calculateBazi', () => {
       ),
     ).toBe(8)
   })
+
+  it('supports lunar-new-year and lichun year boundaries explicitly', async () => {
+    const boundaryProfile = {
+      ...profile,
+      localDate: '2025-01-30',
+    }
+    const lichun = await calculateBazi(boundaryProfile)
+    const lunarNewYear = await calculateBazi(boundaryProfile, {
+      yearBoundary: 'lunar-new-year',
+      dayBoundary: '00:00',
+      timeBasis: 'civil',
+      luckCycleVersion: 'dayun-v1',
+      engine: 'tyme4ts',
+    })
+
+    expect(
+      `${lichun.facts.pillars[0]?.stem}${lichun.facts.pillars[0]?.branch}`,
+    ).toBe('甲辰')
+    expect(
+      `${lunarNewYear.facts.pillars[0]?.stem}${lunarNewYear.facts.pillars[0]?.branch}`,
+    ).toBe('乙巳')
+  })
 })

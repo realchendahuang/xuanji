@@ -3,7 +3,12 @@ import { ArrowRight, LoaderCircle } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { BaziResult } from '../components/BaziResult'
 import { api } from '../lib/api-client'
-import type { ChartSnapshot, Reading, TimePrecision } from '../lib/types'
+import type {
+  BaziMethodology,
+  ChartSnapshot,
+  Reading,
+  TimePrecision,
+} from '../lib/types'
 
 export const Route = createFileRoute('/')({ ssr: false, component: Home })
 
@@ -12,7 +17,16 @@ function Home() {
   const [localDate, setLocalDate] = useState('1990-01-01')
   const [localTime, setLocalTime] = useState('12:00')
   const [location, setLocation] = useState('上海')
+  const [latitude, setLatitude] = useState(31.2304)
+  const [longitude, setLongitude] = useState(121.4737)
+  const [timeZone, setTimeZone] = useState('Asia/Shanghai')
   const [timePrecision, setTimePrecision] = useState<TimePrecision>('exact')
+  const [dayBoundary, setDayBoundary] =
+    useState<BaziMethodology['dayBoundary']>('00:00')
+  const [yearBoundary, setYearBoundary] =
+    useState<BaziMethodology['yearBoundary']>('lichun')
+  const [timeBasis, setTimeBasis] =
+    useState<BaziMethodology['timeBasis']>('civil')
   const [snapshot, setSnapshot] = useState<ChartSnapshot | null>(null)
   const [reading, setReading] = useState<Reading | null>(null)
   const [status, setStatus] = useState<'idle' | 'chart' | 'reading'>('idle')
@@ -32,12 +46,18 @@ function Home() {
         timePrecision,
         location: {
           label: location,
-          latitude: 31.2304,
-          longitude: 121.4737,
-          timeZone: 'Asia/Shanghai',
+          latitude,
+          longitude,
+          timeZone,
         },
       })
-      const chart = await api.createBazi(profile.id)
+      const chart = await api.createBazi(profile.id, {
+        yearBoundary,
+        dayBoundary,
+        timeBasis,
+        luckCycleVersion: 'dayun-v1',
+        engine: 'tyme4ts',
+      })
       setSnapshot(chart)
       setStatus('reading')
       const generated = await api.createReading(chart.id)
@@ -93,6 +113,34 @@ function Home() {
               placeholder="城市"
             />
           </label>
+          <div className="coordinate-grid">
+            <label>
+              纬度
+              <input
+                type="number"
+                step="0.0001"
+                value={latitude}
+                onChange={(event) => setLatitude(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              经度
+              <input
+                type="number"
+                step="0.0001"
+                value={longitude}
+                onChange={(event) => setLongitude(Number(event.target.value))}
+              />
+            </label>
+          </div>
+          <label>
+            IANA 时区
+            <input
+              value={timeZone}
+              onChange={(event) => setTimeZone(event.target.value)}
+              placeholder="Asia/Shanghai"
+            />
+          </label>
           <fieldset>
             <legend>时间精度</legend>
             <div className="precision-options">
@@ -115,6 +163,51 @@ function Home() {
                 </label>
               ))}
             </div>
+          </fieldset>
+          <fieldset>
+            <legend>排盘方法</legend>
+            <label>
+              换年方式
+              <select
+                value={yearBoundary}
+                onChange={(event) =>
+                  setYearBoundary(
+                    event.target.value as BaziMethodology['yearBoundary'],
+                  )
+                }
+              >
+                <option value="lichun">立春换年</option>
+                <option value="lunar-new-year">农历新年换年</option>
+              </select>
+            </label>
+            <label>
+              时间基准
+              <select
+                value={timeBasis}
+                onChange={(event) =>
+                  setTimeBasis(
+                    event.target.value as BaziMethodology['timeBasis'],
+                  )
+                }
+              >
+                <option value="civil">民用时</option>
+                <option value="true-solar">真太阳时</option>
+              </select>
+            </label>
+            <label>
+              换日边界
+              <select
+                value={dayBoundary}
+                onChange={(event) =>
+                  setDayBoundary(
+                    event.target.value as BaziMethodology['dayBoundary'],
+                  )
+                }
+              >
+                <option value="00:00">00:00</option>
+                <option value="23:00">23:00</option>
+              </select>
+            </label>
           </fieldset>
           <button
             className="primary-button"

@@ -33,26 +33,78 @@ function profileFromRow(row: ProfileRow): BirthProfile {
 }
 
 export async function insertProfile(db: D1Database, profile: BirthProfile) {
-  await db
-    .prepare(
-      `INSERT INTO birth_profiles
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO birth_profiles
       (id, name, local_date, local_time, time_precision, location_label, latitude, longitude, time_zone, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        profile.id,
+        profile.name,
+        profile.localDate,
+        profile.localTime,
+        profile.timePrecision,
+        profile.location.label,
+        profile.location.latitude,
+        profile.location.longitude,
+        profile.location.timeZone,
+        profile.createdAt,
+        profile.updatedAt,
+      ),
+    db
+      .prepare(
+        `INSERT INTO birth_profile_versions
+       (id, profile_id, version, profile_json, created_at) VALUES (?, ?, 1, ?, ?)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        profile.id,
+        JSON.stringify(profile),
+        profile.createdAt,
+      ),
+  ])
+}
+
+export async function updateProfile(db: D1Database, profile: BirthProfile) {
+  const versionRow = await db
+    .prepare(
+      'SELECT COALESCE(MAX(version), 0) + 1 AS version FROM birth_profile_versions WHERE profile_id = ?',
     )
-    .bind(
-      profile.id,
-      profile.name,
-      profile.localDate,
-      profile.localTime,
-      profile.timePrecision,
-      profile.location.label,
-      profile.location.latitude,
-      profile.location.longitude,
-      profile.location.timeZone,
-      profile.createdAt,
-      profile.updatedAt,
-    )
-    .run()
+    .bind(profile.id)
+    .first<{ version: number }>()
+  await db.batch([
+    db
+      .prepare(
+        `UPDATE birth_profiles SET name = ?, local_date = ?, local_time = ?, time_precision = ?,
+       location_label = ?, latitude = ?, longitude = ?, time_zone = ?, updated_at = ? WHERE id = ?`,
+      )
+      .bind(
+        profile.name,
+        profile.localDate,
+        profile.localTime,
+        profile.timePrecision,
+        profile.location.label,
+        profile.location.latitude,
+        profile.location.longitude,
+        profile.location.timeZone,
+        profile.updatedAt,
+        profile.id,
+      ),
+    db
+      .prepare(
+        `INSERT INTO birth_profile_versions
+       (id, profile_id, version, profile_json, created_at) VALUES (?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        profile.id,
+        versionRow?.version ?? 1,
+        JSON.stringify(profile),
+        profile.updatedAt,
+      ),
+  ])
 }
 
 export async function listProfiles(db: D1Database) {
