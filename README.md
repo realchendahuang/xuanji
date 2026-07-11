@@ -1,102 +1,123 @@
-# XuanJi (玄机)
+# XuanJi（玄机）
 
-**Professional AI-powered multi-tradition fortune-telling & divination platform**, built entirely on Cloudflare.
+XuanJi is an open-source AI fortune-reading platform built as a single Cloudflare full-stack application.
 
-XuanJi uses Cloudflare's **Think Agents** harness with modular "skills" to deliver accurate, culturally-grounded, and personalized fortune insights across Eastern and Western traditions — in one unified, professional experience.
+The MVP starts with one complete path: deterministic BaZi calculation, structured evidence, AI-generated reading, and follow-up chat. Western astrology and daily readings come after the first path is stable.
 
-## Why XuanJi?
+## Core idea
 
-- **玄机 (XuanJi)**: The profound hidden mechanisms of fate. An AI that thinks deeply to reveal patterns across traditions.
-- Unified interface with mode selection (not fragmented mini-apps).
-- Precise calculations (Bazi, Ziwei) via code + rich AI interpretation.
-- Dynamic skill loading for different divination systems.
-- Current fortune synthesis (flow years, transits, daily influences).
-- Ethical design: entertainment + cultural insight + actionable reflection, never deterministic.
+XuanJi separates calculation from interpretation:
 
-## Core Features
+1. Deterministic TypeScript tools calculate chart facts.
+2. Versioned rules turn facts into evidence.
+3. AI organizes facts and evidence into a readable report.
+4. Follow-up chat stays bound to the original immutable chart snapshot.
 
-- **Multi-Tradition Support** (modular skills):
-  - Eastern: 八字 (Bazi/Four Pillars), 紫微斗数 (Ziwei Doushu), 易经 (I Ching), Chinese Zodiac + annual fortune
-  - Western: Zodiac (daily + natal), Tarot (spreads & interpretations)
-  - Synthesis mode: Cross-tradition insights
-- **Precise Chart Engine**: Uses `iztro` library for accurate Bazi & Ziwei calculations (not LLM hallucination).
-- **Current Fortune Awareness**: Date-aware analysis, flow years (流年), planetary influences, personalized to birth data.
-- **Think Agent Architecture**:
-  - Modular skills (prompt packs) loaded dynamically from R2 or bundled.
-  - Tools for calculations, card drawing, lunar date conversion, knowledge retrieval.
-  - Persistent sessions, streaming responses, memory.
-- **Full-Stack on Cloudflare** (zero server cost):
-  - Frontend: TanStack Start
-  - Backend: Hono + type-safe RPC
-  - AI Layer: Think Agents (Durable Objects + SQLite)
-  - Storage: R2 (skills & assets), D1/KV (user data/history)
-  - Vectorize for RAG on classic texts (optional advanced)
-- **Simple Auth MVP**: Token + password (no email required initially)
-- **Professional Output**: Structured readings with tradition basis, personalization, actionable advice, and clear disclaimers.
+The model does not calculate pillars, solar terms, houses, or aspects.
 
-## Tech Stack
+## MVP
 
-- **Cloudflare Agents (Think harness)** — stateful agentic loop, skills, tools, streaming
-- **Hono** + Hono RPC — lightweight, type-safe API
-- **TanStack Start** — modern React full-stack frontend (deployed on CF)
-- **Workers AI** (Kimi K2 / GLM recommended) — strong Chinese + tool calling
-- **iztro** — lightweight JS library for Bazi & Ziwei Doushu
-- **Durable Objects + SQLite** — persistent agent state & sessions
-- **R2 + Vectorize** — skills storage & knowledge base
+- Birth profile and civil-time normalization
+- BaZi chart calculation
+- Immutable chart snapshots
+- Rule and evidence engine
+- Structured AI readings
+- Streaming follow-up chat
+- Reading history
+- Golden cases and deterministic tests
+- Dedicated Cloudflare AI Gateway
 
-## Project Structure (Planned)
+Not included in the first MVP: payments, admin systems, generalized RAG, or multiple divination systems at once.
 
+## Architecture
+
+One Cloudflare Worker handles the full application:
+
+- TanStack Start for pages and SSR
+- Hono + Hono RPC for business APIs
+- Cloudflare Agents + `@cloudflare/think` for stateful chat
+- D1 for profiles, chart snapshots, rules, and readings
+- Durable Object SQLite for Agent conversations
+- R2 for skills and generated assets
+- KV / Cache API for public daily content
+- Workers AI through a project-specific AI Gateway
+
+```text
+Browser
+  -> XuanJi Worker
+     ├─ TanStack Start
+     ├─ Hono API
+     ├─ XuanJiAgent
+     └─ deterministic chart tools
+
+XuanJiAgent
+  -> packages/ai
+     -> dedicated XuanJi AI Gateway
+        -> Workers AI / optional external provider
 ```
+
+## Dedicated AI Gateway
+
+Every deployment uses its own Cloudflare AI Gateway. The default Gateway ID is `xuanji`.
+
+The Gateway remains a Cloudflare account resource, while all integration code, configuration examples, and setup scripts live in this repository. No second Gateway repository or proxy Worker is required.
+
+Runtime configuration:
+
+```text
+AI_GATEWAY_ID=xuanji
+AI_PROVIDER=workers-ai
+AI_MODEL=<locked-project-model>
+AI_FALLBACK_MODEL=<optional-model>
+```
+
+Cloudflare and provider credentials are supplied by the deployment environment.
+
+## Planned repository structure
+
+```text
 xuanji/
-├─ frontend/          # TanStack Start app
-├─ backend/           # Hono + Think Agent (Workers)
-├─ skills/            # Modular prompt packs (bazi.md, ziwei.md, tarot.md...)
-├─ packages/          # Shared types, utils, iztro wrapper
-├─ wrangler.toml
-├─ README.md
-└─ ...
+├── apps/
+│   └── web/                 TanStack Start + Worker entry
+├── packages/
+│   ├── api/                 Hono routes and RPC types
+│   ├── contracts/           Zod schemas and DTOs
+│   ├── db/                  D1 repositories
+│   ├── domain-time/         timezone and civil-time normalization
+│   ├── domain-bazi/         deterministic BaZi engine
+│   ├── domain-astrology/    Western chart engine, later phase
+│   ├── rules/               evidence-producing rule engine
+│   ├── ai/                  AI Gateway and model adapters
+│   ├── agent/               XuanJiAgent and tools
+│   ├── skills/              interpretation knowledge packages
+│   ├── report/              report contracts and rendering
+│   ├── ui/                  shared components
+│   └── evals/               golden cases and model evals
+├── migrations/
+├── scripts/
+├── docs/
+├── wrangler.jsonc
+└── pnpm-workspace.yaml
 ```
 
-## Getting Started (High-level)
+All internal packages use the `@xuanji/*` scope.
 
-1. Clone the repo
-2. `npm install`
-3. Configure `wrangler.toml` (AI binding, DO migrations, R2, etc.)
-4. Deploy with `wrangler deploy`
+## Build order
 
-Detailed setup guide will be added as we build.
+1. Monorepo and single Worker skeleton
+2. Dedicated AI Gateway adapter and preview call
+3. Birth profile and time normalization
+4. Deterministic BaZi chart and golden cases
+5. Rules, evidence, reports, and Agent chat
+6. Western astrology
+7. Daily readings and exports
 
-## Roadmap
+## Documentation
 
-- [ ] Phase 1: Core Think Agent + one high-value mode (Bazi daily/annual fortune)
-- [ ] Phase 2: Add Ziwei, Tarot, Zodiac modes + dynamic skill activation
-- [ ] Phase 3: Chart visualization (SVG/react-iztro), history, synthesis mode
-- [ ] Phase 4: RAG knowledge base, improved current fortune engine, auth polish
-- [ ] Phase 5: Image generation for charts/visuals, public demo
-
-## Philosophy & Professionalism
-
-XuanJi is designed as a **cultural + technological exploration tool**, not a replacement for professional advice or traditional masters.
-
-Every reading includes:
-- Basis in traditional theory
-- Personalization from user birth data
-- Current timing influences
-- Balanced view (opportunities + cautions)
-- Clear disclaimer
-
-We aim for depth, accuracy where possible (via code), and genuine insight — not generic horoscopes.
-
-## License
-
-To be decided (likely MIT or custom for the project).
+- [MVP PRD and TDD](docs/ai-fortune-cloudflare-prd-tdd-v1.0.md)
+- [Lean MVP documentation scope](docs/superpowers/specs/2026-07-11-mvp-document-simplification-design.md)
+- [Dedicated AI Gateway design](docs/superpowers/specs/2026-07-11-dedicated-ai-gateway-design.md)
 
 ## Status
 
-Early planning & architecture phase. Actively building.
-
----
-
-Built with ❤️ by a solo developer on Cloudflare's edge + AI primitives.
-
-Repository created and initialized with this README on 2026-07-10.
+The product and technical baseline are ready. Implementation starts with the single-Worker platform skeleton and the dedicated AI Gateway path.
