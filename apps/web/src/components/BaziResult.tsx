@@ -25,7 +25,14 @@ export function BaziResult({
             <span className="section-number">02</span>
             <h2>四柱命盘</h2>
           </div>
-          <span className="method-note">立春换年 · 民用时 · tyme4ts 1.5.2</span>
+          <span className="method-note">
+            {snapshot.methodology.yearBoundary === 'lichun'
+              ? '立春换年'
+              : '农历新年换年'}{' '}
+            ·{' '}
+            {snapshot.methodology.timeBasis === 'civil' ? '民用时' : '真太阳时'}{' '}
+            · {snapshot.methodology.dayBoundary} 换日
+          </span>
         </div>
         <div className="pillars">
           {snapshot.facts.pillars.map((pillar) => (
@@ -48,7 +55,40 @@ export function BaziResult({
             生肖 <b>{snapshot.facts.zodiac}</b>
           </span>
           <span>{snapshot.facts.lunarText}</span>
+          <span>
+            大运{' '}
+            <b>
+              {snapshot.facts.luckCycle.direction === 'forward'
+                ? '顺排'
+                : snapshot.facts.luckCycle.direction === 'backward'
+                  ? '逆排'
+                  : '未定'}
+            </b>
+          </span>
         </div>
+        <div className="fact-grid">
+          {snapshot.facts.pillars.map((pillar, index) => (
+            <div key={`${pillar.label}-facts`}>
+              <span>{pillar.label}</span>
+              <b>{snapshot.facts.tenGods[index]?.relation}</b>
+              <small>
+                藏干 {snapshot.facts.hiddenStems[index]?.stems.join(' · ')}
+              </small>
+            </div>
+          ))}
+        </div>
+        {snapshot.facts.luckCycle.decades.length ? (
+          <div className="decade-strip">
+            {snapshot.facts.luckCycle.decades.map((item) => (
+              <div key={item.name}>
+                <b>{item.name}</b>
+                <span>
+                  {item.startAge}–{item.endAge} 岁
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="elements-section">

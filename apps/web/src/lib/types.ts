@@ -6,6 +6,7 @@ export type BirthProfile = {
   localDate: string
   localTime: string
   timePrecision: TimePrecision
+  gender: 'male' | 'female' | 'unspecified'
   location: {
     label: string
     latitude: number
@@ -48,6 +49,16 @@ export type BaziFacts = {
   zodiac: string
   elements: Record<'木' | '火' | '土' | '金' | '水', number>
   normalizedTime: NormalizedBirthTime
+  hiddenStems: Array<{ branch: string; stems: string[] }>
+  tenGods: Array<{ pillar: Pillar['label']; stem: string; relation: string }>
+  luckCycle: {
+    direction: 'forward' | 'backward' | 'undetermined'
+    algorithmVersion: string
+    reason: string
+    startTime?: string
+    startAge?: number
+    decades: Array<{ name: string; startAge: number; endAge: number }>
+  }
 }
 
 export type ChartSnapshot = {
@@ -64,16 +75,21 @@ export type ChartSnapshot = {
 
 export type Evidence = {
   id: string
+  factRefs: string[]
+  ruleId: string
+  ruleVersion: string
   title: string
   summary: string
-  factRefs: string[]
 }
 
-export type ReadingSection = {
+export type Claim = {
+  id: string
   title: string
   body: string
   evidenceIds: string[]
 }
+
+export type ReadingSection = Claim
 
 export type Reading = {
   id: string

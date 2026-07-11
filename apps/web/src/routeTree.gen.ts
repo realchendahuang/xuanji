@@ -12,6 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MethodologyRouteImport } from './routes/methodology'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReadingReadingIdRouteImport } from './routes/reading.$readingId'
+import { Route as ProfilesNewRouteImport } from './routes/profiles.new'
+import { Route as ChatConversationIdRouteImport } from './routes/chat.$conversationId'
+import { Route as ProfilesProfileIdEditRouteImport } from './routes/profiles.$profileId.edit'
+import { Route as ChartBaziSnapshotIdRouteImport } from './routes/chart.bazi.$snapshotId'
 
 const MethodologyRoute = MethodologyRouteImport.update({
   id: '/methodology',
@@ -28,35 +33,105 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReadingReadingIdRoute = ReadingReadingIdRouteImport.update({
+  id: '/reading/$readingId',
+  path: '/reading/$readingId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfilesNewRoute = ProfilesNewRouteImport.update({
+  id: '/profiles/new',
+  path: '/profiles/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
+  id: '/chat/$conversationId',
+  path: '/chat/$conversationId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfilesProfileIdEditRoute = ProfilesProfileIdEditRouteImport.update({
+  id: '/profiles/$profileId/edit',
+  path: '/profiles/$profileId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChartBaziSnapshotIdRoute = ChartBaziSnapshotIdRouteImport.update({
+  id: '/chart/bazi/$snapshotId',
+  path: '/chart/bazi/$snapshotId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/methodology': typeof MethodologyRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/profiles/new': typeof ProfilesNewRoute
+  '/reading/$readingId': typeof ReadingReadingIdRoute
+  '/chart/bazi/$snapshotId': typeof ChartBaziSnapshotIdRoute
+  '/profiles/$profileId/edit': typeof ProfilesProfileIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/methodology': typeof MethodologyRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/profiles/new': typeof ProfilesNewRoute
+  '/reading/$readingId': typeof ReadingReadingIdRoute
+  '/chart/bazi/$snapshotId': typeof ChartBaziSnapshotIdRoute
+  '/profiles/$profileId/edit': typeof ProfilesProfileIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/methodology': typeof MethodologyRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/profiles/new': typeof ProfilesNewRoute
+  '/reading/$readingId': typeof ReadingReadingIdRoute
+  '/chart/bazi/$snapshotId': typeof ChartBaziSnapshotIdRoute
+  '/profiles/$profileId/edit': typeof ProfilesProfileIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history' | '/methodology'
+  fullPaths:
+    | '/'
+    | '/history'
+    | '/methodology'
+    | '/chat/$conversationId'
+    | '/profiles/new'
+    | '/reading/$readingId'
+    | '/chart/bazi/$snapshotId'
+    | '/profiles/$profileId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history' | '/methodology'
-  id: '__root__' | '/' | '/history' | '/methodology'
+  to:
+    | '/'
+    | '/history'
+    | '/methodology'
+    | '/chat/$conversationId'
+    | '/profiles/new'
+    | '/reading/$readingId'
+    | '/chart/bazi/$snapshotId'
+    | '/profiles/$profileId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/history'
+    | '/methodology'
+    | '/chat/$conversationId'
+    | '/profiles/new'
+    | '/reading/$readingId'
+    | '/chart/bazi/$snapshotId'
+    | '/profiles/$profileId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
   MethodologyRoute: typeof MethodologyRoute
+  ChatConversationIdRoute: typeof ChatConversationIdRoute
+  ProfilesNewRoute: typeof ProfilesNewRoute
+  ReadingReadingIdRoute: typeof ReadingReadingIdRoute
+  ChartBaziSnapshotIdRoute: typeof ChartBaziSnapshotIdRoute
+  ProfilesProfileIdEditRoute: typeof ProfilesProfileIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +157,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reading/$readingId': {
+      id: '/reading/$readingId'
+      path: '/reading/$readingId'
+      fullPath: '/reading/$readingId'
+      preLoaderRoute: typeof ReadingReadingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profiles/new': {
+      id: '/profiles/new'
+      path: '/profiles/new'
+      fullPath: '/profiles/new'
+      preLoaderRoute: typeof ProfilesNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/$conversationId': {
+      id: '/chat/$conversationId'
+      path: '/chat/$conversationId'
+      fullPath: '/chat/$conversationId'
+      preLoaderRoute: typeof ChatConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profiles/$profileId/edit': {
+      id: '/profiles/$profileId/edit'
+      path: '/profiles/$profileId/edit'
+      fullPath: '/profiles/$profileId/edit'
+      preLoaderRoute: typeof ProfilesProfileIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chart/bazi/$snapshotId': {
+      id: '/chart/bazi/$snapshotId'
+      path: '/chart/bazi/$snapshotId'
+      fullPath: '/chart/bazi/$snapshotId'
+      preLoaderRoute: typeof ChartBaziSnapshotIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
   MethodologyRoute: MethodologyRoute,
+  ChatConversationIdRoute: ChatConversationIdRoute,
+  ProfilesNewRoute: ProfilesNewRoute,
+  ReadingReadingIdRoute: ReadingReadingIdRoute,
+  ChartBaziSnapshotIdRoute: ChartBaziSnapshotIdRoute,
+  ProfilesProfileIdEditRoute: ProfilesProfileIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -407,6 +407,46 @@ a {
   color: var(--muted);
   font-size: 11px;
 }
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+}
+.fact-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px 12px;
+  border-right: 1px solid var(--line);
+}
+.fact-grid > div:last-child {
+  border-right: 0;
+}
+.fact-grid span,
+.fact-grid small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.decade-strip {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(70px, 1fr));
+  gap: 1px;
+  overflow-x: auto;
+  margin-top: 1px;
+  background: var(--line);
+}
+.decade-strip > div {
+  min-width: 72px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 10px;
+  background: var(--paper);
+  text-align: center;
+}
+.decade-strip span {
+  color: var(--muted);
+  font-size: 10px;
+}
 .chart-meta b {
   color: var(--ink);
   font: 500 17px var(--serif);

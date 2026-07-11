@@ -8,6 +8,7 @@ const profile: BirthProfile = {
   localDate: '1990-01-01',
   localTime: '12:00',
   timePrecision: 'exact',
+  gender: 'male',
   location: {
     label: '上海',
     latitude: 31.2304,
@@ -27,6 +28,16 @@ describe('calculateBazi', () => {
     ).toEqual(['己巳', '丙子', '丙寅', '甲午'])
     expect(snapshot.facts.dayMaster).toBe('丙')
     expect(snapshot.facts.zodiac).toBe('蛇')
+    expect(snapshot.facts.hiddenStems[0]?.stems).toEqual(['丙', '戊', '庚'])
+    expect(snapshot.facts.tenGods.map((item) => item.relation)).toEqual([
+      '伤官',
+      '比肩',
+      '比肩',
+      '偏印',
+    ])
+    expect(snapshot.facts.luckCycle.direction).toBe('backward')
+    expect(snapshot.facts.luckCycle.startAge).toBeGreaterThan(0)
+    expect(snapshot.facts.luckCycle.decades).toHaveLength(8)
   })
 
   it('counts the visible stem and branch elements', async () => {
@@ -66,6 +77,17 @@ describe('calculateBazi', () => {
     ).toBe('甲辰')
     expect(
       `${lunarNewYear.facts.pillars[0]?.stem}${lunarNewYear.facts.pillars[0]?.branch}`,
+    ).toBe('乙巳')
+  })
+
+  it('changes the lichun year pillar across the solar-term boundary', async () => {
+    const before = await calculateBazi({ ...profile, localDate: '2025-02-02' })
+    const after = await calculateBazi({ ...profile, localDate: '2025-02-05' })
+    expect(
+      `${before.facts.pillars[0]?.stem}${before.facts.pillars[0]?.branch}`,
+    ).toBe('甲辰')
+    expect(
+      `${after.facts.pillars[0]?.stem}${after.facts.pillars[0]?.branch}`,
     ).toBe('乙巳')
   })
 })

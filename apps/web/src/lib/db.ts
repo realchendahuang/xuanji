@@ -6,6 +6,7 @@ type ProfileRow = {
   local_date: string
   local_time: string
   time_precision: BirthProfile['timePrecision']
+  gender: BirthProfile['gender']
   location_label: string
   latitude: number
   longitude: number
@@ -21,6 +22,7 @@ function profileFromRow(row: ProfileRow): BirthProfile {
     localDate: row.local_date,
     localTime: row.local_time,
     timePrecision: row.time_precision,
+    gender: row.gender,
     location: {
       label: row.location_label,
       latitude: row.latitude,
@@ -37,8 +39,8 @@ export async function insertProfile(db: D1Database, profile: BirthProfile) {
     db
       .prepare(
         `INSERT INTO birth_profiles
-      (id, name, local_date, local_time, time_precision, location_label, latitude, longitude, time_zone, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, name, local_date, local_time, time_precision, gender, location_label, latitude, longitude, time_zone, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         profile.id,
@@ -46,6 +48,7 @@ export async function insertProfile(db: D1Database, profile: BirthProfile) {
         profile.localDate,
         profile.localTime,
         profile.timePrecision,
+        profile.gender,
         profile.location.label,
         profile.location.latitude,
         profile.location.longitude,
@@ -77,7 +80,7 @@ export async function updateProfile(db: D1Database, profile: BirthProfile) {
   await db.batch([
     db
       .prepare(
-        `UPDATE birth_profiles SET name = ?, local_date = ?, local_time = ?, time_precision = ?,
+        `UPDATE birth_profiles SET name = ?, local_date = ?, local_time = ?, time_precision = ?, gender = ?,
        location_label = ?, latitude = ?, longitude = ?, time_zone = ?, updated_at = ? WHERE id = ?`,
       )
       .bind(
@@ -85,6 +88,7 @@ export async function updateProfile(db: D1Database, profile: BirthProfile) {
         profile.localDate,
         profile.localTime,
         profile.timePrecision,
+        profile.gender,
         profile.location.label,
         profile.location.latitude,
         profile.location.longitude,
@@ -123,24 +127,36 @@ export async function getProfile(db: D1Database, id: string) {
 }
 
 export async function insertSnapshot(db: D1Database, snapshot: ChartSnapshot) {
-  await db
-    .prepare(
-      `INSERT INTO chart_snapshots
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO chart_snapshots
       (id, profile_id, mode, input_hash, engine_id, engine_version, methodology_json, facts_json, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      snapshot.id,
-      snapshot.profileId,
-      snapshot.mode,
-      snapshot.inputHash,
-      snapshot.engineId,
-      snapshot.engineVersion,
-      JSON.stringify(snapshot.methodology),
-      JSON.stringify(snapshot.facts),
-      snapshot.createdAt,
-    )
-    .run()
+      )
+      .bind(
+        snapshot.id,
+        snapshot.profileId,
+        snapshot.mode,
+        snapshot.inputHash,
+        snapshot.engineId,
+        snapshot.engineVersion,
+        JSON.stringify(snapshot.methodology),
+        JSON.stringify(snapshot.facts),
+        snapshot.createdAt,
+      ),
+    db
+      .prepare(
+        `INSERT OR IGNORE INTO methodology_profiles (id, mode, version, config_json, created_at)
+       VALUES (?, 'bazi', ?, ?, ?)`,
+      )
+      .bind(
+        `bazi-${snapshot.inputHash.slice(0, 16)}`,
+        snapshot.methodology.luckCycleVersion,
+        JSON.stringify(snapshot.methodology),
+        snapshot.createdAt,
+      ),
+  ])
 }
 
 export async function getSnapshot(db: D1Database, id: string) {
@@ -172,26 +188,59 @@ export async function getSnapshot(db: D1Database, id: string) {
 }
 
 export async function insertReading(db: D1Database, reading: Reading) {
-  await db
-    .prepare(
-      `INSERT INTO readings
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO readings
       (id, snapshot_id, title, summary, content_json, model, gateway_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      reading.id,
-      reading.snapshotId,
-      reading.title,
-      reading.summary,
-      JSON.stringify({
-        sections: reading.sections,
-        evidence: reading.evidence,
-      }),
-      reading.model,
-      reading.gatewayId,
-      reading.createdAt,
-    )
-    .run()
+      )
+      .bind(
+        reading.id,
+        reading.snapshotId,
+        reading.title,
+        reading.summary,
+        JSON.stringify({
+          sections: reading.sections,
+          evidence: reading.evidence,
+        }),
+        reading.model,
+        reading.gatewayId,
+        reading.createdAt,
+      ),
+    ...reading.sections.map((claim, index) =>
+      db
+        .prepare(
+          `INSERT INTO reading_claims (id, reading_id, title, body, evidence_ids_json, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          claim.id,
+          reading.id,
+          claim.title,
+          claim.body,
+          JSON.stringify(claim.evidenceIds),
+          index,
+        ),
+    ),
+    ...reading.evidence.map((item) =>
+      db
+        .prepare(
+          `INSERT INTO reading_evidence
+         (id, reading_id, rule_id, rule_version, title, summary, fact_refs_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          item.id,
+          reading.id,
+          item.ruleId,
+          item.ruleVersion,
+          item.title,
+          item.summary,
+          JSON.stringify(item.factRefs),
+        ),
+    ),
+  ])
 }
 
 export async function listReadings(db: D1Database) {

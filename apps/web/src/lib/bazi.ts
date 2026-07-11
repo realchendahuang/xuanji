@@ -1,4 +1,4 @@
-import { SolarTime } from 'tyme4ts'
+import { ChildLimit, Gender, SolarTime } from 'tyme4ts'
 import type {
   BaziFacts,
   BaziMethodology,
@@ -52,6 +52,50 @@ const ZODIAC: Record<string, string> = {
 }
 
 const YANG_STEMS = new Set(['甲', '丙', '戊', '庚', '壬'])
+
+const HIDDEN_STEMS: Record<string, string[]> = {
+  子: ['癸'],
+  丑: ['己', '癸', '辛'],
+  寅: ['甲', '丙', '戊'],
+  卯: ['乙'],
+  辰: ['戊', '乙', '癸'],
+  巳: ['丙', '戊', '庚'],
+  午: ['丁', '己'],
+  未: ['己', '丁', '乙'],
+  申: ['庚', '壬', '戊'],
+  酉: ['辛'],
+  戌: ['戊', '辛', '丁'],
+  亥: ['壬', '甲'],
+}
+
+const GENERATES: Record<string, string> = {
+  木: '火',
+  火: '土',
+  土: '金',
+  金: '水',
+  水: '木',
+}
+const CONTROLS: Record<string, string> = {
+  木: '土',
+  土: '水',
+  水: '火',
+  火: '金',
+  金: '木',
+}
+
+function tenGod(dayStem: string, targetStem: string) {
+  const selfElement = STEM_ELEMENT[dayStem]
+  const targetElement = STEM_ELEMENT[targetStem]
+  const samePolarity = YANG_STEMS.has(dayStem) === YANG_STEMS.has(targetStem)
+  if (selfElement === targetElement) return samePolarity ? '比肩' : '劫财'
+  if (GENERATES[selfElement] === targetElement)
+    return samePolarity ? '食神' : '伤官'
+  if (GENERATES[targetElement] === selfElement)
+    return samePolarity ? '偏印' : '正印'
+  if (CONTROLS[selfElement] === targetElement)
+    return samePolarity ? '偏财' : '正财'
+  return samePolarity ? '七杀' : '正官'
+}
 
 function toPillar(label: Pillar['label'], value: string): Pillar {
   const stem = value.slice(0, 1)
@@ -110,6 +154,38 @@ export async function calculateBazi(
     elements[stemElement] += 1
     elements[branchElement] += 1
   }
+  const dayStem = pillars[2].stem
+  const hiddenStems = pillars.map((pillar) => ({
+    branch: pillar.branch,
+    stems: HIDDEN_STEMS[pillar.branch] ?? [],
+  }))
+  const tenGods = pillars.map((pillar) => ({
+    pillar: pillar.label,
+    stem: pillar.stem,
+    relation: tenGod(dayStem, pillar.stem),
+  }))
+  const yearYang = YANG_STEMS.has(pillars[0].stem)
+  const childLimit =
+    profile.gender === 'unspecified'
+      ? null
+      : ChildLimit.fromSolarTime(
+          solar,
+          profile.gender === 'male' ? Gender.MAN : Gender.WOMAN,
+        )
+  const luckDirection = childLimit
+    ? childLimit.isForward()
+      ? 'forward'
+      : 'backward'
+    : 'undetermined'
+  const decades = childLimit
+    ? Array.from({ length: 8 }, (_, index) =>
+        childLimit.getStartDecadeFortune().next(index),
+      ).map((item) => ({
+        name: item.getName(),
+        startAge: item.getStartAge(),
+        endAge: item.getEndAge(),
+      }))
+    : []
 
   const input = JSON.stringify({ profile, methodology })
   const inputHash = Array.from(
@@ -135,6 +211,19 @@ export async function calculateBazi(
       zodiac: ZODIAC[pillars[0].branch] ?? '',
       elements,
       normalizedTime,
+      hiddenStems,
+      tenGods,
+      luckCycle: {
+        direction: luckDirection,
+        algorithmVersion: methodology.luckCycleVersion,
+        reason:
+          profile.gender === 'unspecified'
+            ? '未提供性别，不推断大运顺逆'
+            : `${yearYang ? '阳' : '阴'}年干与${profile.gender === 'male' ? '男' : '女'}命组合`,
+        startTime: childLimit?.getEndTime().toString(),
+        startAge: decades[0]?.startAge,
+        decades,
+      },
     },
     createdAt: new Date().toISOString(),
   }

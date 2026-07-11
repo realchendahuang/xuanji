@@ -106,9 +106,13 @@ pnpm --dir apps/web build
 Deploy after authenticating Wrangler:
 
 ```bash
+cp apps/web/.dev.vars.example apps/web/.dev.vars
+pnpm setup:gateway
 pnpm --dir apps/web exec wrangler d1 migrations apply xuanji --remote
 pnpm --dir apps/web run deploy
 ```
+
+`setup:gateway` expects `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; it is idempotent and keeps the Gateway in the same Cloudflare account as the Worker.
 
 Dedicated Cloudflare resources used by production:
 
@@ -125,6 +129,7 @@ Production: [xuanji.chendanhuang31016.workers.dev](https://xuanji.chendanhuang31
 - [MVP PRD and TDD](docs/ai-fortune-cloudflare-prd-tdd-v1.0.md)
 - [Lean MVP documentation scope](docs/superpowers/specs/2026-07-11-mvp-document-simplification-design.md)
 - [Dedicated AI Gateway design](docs/superpowers/specs/2026-07-11-dedicated-ai-gateway-design.md)
+- [Implementation status and evidence](docs/implementation-status.md)
 
 ## Status
 

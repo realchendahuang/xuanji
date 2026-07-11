@@ -17,6 +17,7 @@ function profile(overrides: Partial<BirthProfile> = {}): BirthProfile {
     localDate: '2024-03-10',
     localTime: '02:30',
     timePrecision: 'exact',
+    gender: 'unspecified',
     location: {
       label: '纽约',
       latitude: 40.7128,
@@ -41,6 +42,15 @@ describe('normalizeBirthTime', () => {
     )
     expect(normalized.disambiguation).toBe('compatible')
     expect(normalized.zonedDateTime).toContain('America/New_York')
+  })
+
+  it('rejects an exact time inside a DST overlap', () => {
+    expect(() =>
+      normalizeBirthTime(
+        profile({ localDate: '2024-11-03', localTime: '01:30' }),
+        methodology,
+      ),
+    ).toThrow('夏令时')
   })
 
   it('uses local noon when birth time is unknown', () => {

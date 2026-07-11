@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-07-11T13:46:33.944Z",
+  "skills": [
+    {
+      "id": "bazi-core",
+      "version": "1.0.0",
+      "path": "bazi-core/SKILL.md",
+      "sha256": "bd46d91e89c8474b2e028a9cd6fbb6a98182d430c6c600faa5fc6a32a2883077"
+    }
+  ]
+}
