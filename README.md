@@ -67,50 +67,58 @@ Runtime configuration:
 ```text
 AI_GATEWAY_ID=xuanji
 AI_PROVIDER=workers-ai
-AI_MODEL=<locked-project-model>
-AI_FALLBACK_MODEL=<optional-model>
+AI_MODEL=@cf/meta/llama-3.1-8b-instruct-fast
 ```
 
-Cloudflare and provider credentials are supplied by the deployment environment.
+Workers AI uses the Worker AI binding, so the deployed application does not need a separate provider token. Wrangler authentication is only needed by maintainers when creating resources or deploying.
 
-## Planned repository structure
+## Repository structure
 
 ```text
 xuanji/
 ├── apps/
-│   └── web/                 TanStack Start + Worker entry
-├── packages/
-│   ├── api/                 Hono routes and RPC types
-│   ├── contracts/           Zod schemas and DTOs
-│   ├── db/                  D1 repositories
-│   ├── domain-time/         timezone and civil-time normalization
-│   ├── domain-bazi/         deterministic BaZi engine
-│   ├── domain-astrology/    Western chart engine, later phase
-│   ├── rules/               evidence-producing rule engine
-│   ├── ai/                  AI Gateway and model adapters
-│   ├── agent/               XuanJiAgent and tools
-│   ├── skills/              interpretation knowledge packages
-│   ├── report/              report contracts and rendering
-│   ├── ui/                  shared components
-│   └── evals/               golden cases and model evals
-├── migrations/
-├── scripts/
+│   └── web/
+│       ├── agents/          stateful XuanJi Think agent
+│       ├── migrations/      D1 schema
+│       └── src/             UI, API, domain rules, Worker entry
 ├── docs/
-├── wrangler.jsonc
 └── pnpm-workspace.yaml
 ```
 
-All internal packages use the `@xuanji/*` scope.
+The MVP deliberately stays in one application package. Modules can be extracted only when a second real consumer appears.
 
-## Build order
+## Local development
 
-1. Monorepo and single Worker skeleton
-2. Dedicated AI Gateway adapter and preview call
-3. Birth profile and time normalization
-4. Deterministic BaZi chart and golden cases
-5. Rules, evidence, reports, and Agent chat
-6. Western astrology
-7. Daily readings and exports
+```bash
+pnpm install
+pnpm dev
+```
+
+Quality checks:
+
+```bash
+pnpm --dir apps/web test
+pnpm --dir apps/web lint
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
+```
+
+Deploy after authenticating Wrangler:
+
+```bash
+pnpm --dir apps/web exec wrangler d1 migrations apply xuanji --remote
+pnpm --dir apps/web run deploy
+```
+
+Dedicated Cloudflare resources used by production:
+
+- Worker: `xuanji`
+- AI Gateway: `xuanji`
+- D1: `xuanji`
+- R2: `xuanji-assets`, `xuanji-skills`
+- KV: `PUBLIC_CACHE`
+
+Production: [xuanji.chendanhuang31016.workers.dev](https://xuanji.chendanhuang31016.workers.dev)
 
 ## Documentation
 
@@ -120,4 +128,4 @@ All internal packages use the `@xuanji/*` scope.
 
 ## Status
 
-The product and technical baseline are ready. Implementation starts with the single-Worker platform skeleton and the dedicated AI Gateway path.
+The first complete BaZi MVP path is implemented and deployed: birth profile, deterministic four-pillar calculation, evidence, AI reading through the dedicated Gateway, history, and stateful follow-up chat.

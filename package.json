@@ -1,0 +1,15 @@
+{
+  "name": "xuanji",
+  "private": true,
+  "packageManager": "pnpm@10.28.1",
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "build": "pnpm --dir apps/web build",
+    "test": "pnpm --dir apps/web test",
+    "lint": "pnpm --dir apps/web lint",
+    "check": "pnpm --dir apps/web check",
+    "typecheck": "pnpm --dir apps/web typecheck",
+    "deploy": "pnpm --dir apps/web deploy",
+    "cf:typegen": "pnpm --dir apps/web cf:typegen"
+  }
+}

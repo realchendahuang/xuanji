@@ -1,0 +1,184 @@
+import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
+import { calculateBazi } from '../lib/bazi'
+import {
+  getProfile,
+  getReading,
+  getSnapshot,
+  insertProfile,
+  insertReading,
+  insertSnapshot,
+  listProfiles,
+  listReadings,
+} from '../lib/db'
+import { evaluateSnapshot } from '../lib/rules'
+import type { BirthProfile, Reading } from '../lib/types'
+
+const profileSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  localTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .default('12:00'),
+  timePrecision: z.enum(['exact', 'approximate', 'unknown']).default('exact'),
+  location: z.object({
+    label: z.string().trim().min(1).max(80),
+    latitude: z.number().min(-90).max(90).default(31.2304),
+    longitude: z.number().min(-180).max(180).default(121.4737),
+    timeZone: z.string().default('Asia/Shanghai'),
+  }),
+})
+
+const chartSchema = z.object({ profileId: z.string().uuid() })
+const readingSchema = z.object({ snapshotId: z.string().uuid() })
+
+function extractGatewayText(payload: unknown): string {
+  if (!payload || typeof payload !== 'object') return ''
+  const data = payload as Record<string, unknown>
+  if (typeof data.response === 'string') return data.response.trim()
+  if (typeof data.result === 'string') return data.result.trim()
+  if (data.result && typeof data.result === 'object') {
+    const result = data.result as Record<string, unknown>
+    if (typeof result.response === 'string') return result.response.trim()
+  }
+  if (Array.isArray(data.choices)) {
+    const first = data.choices[0] as Record<string, unknown> | undefined
+    const message = first?.message as Record<string, unknown> | undefined
+    if (typeof message?.content === 'string') return message.content.trim()
+    if (typeof first?.text === 'string') return first.text.trim()
+  }
+  return ''
+}
+
+export const apiApp = new Hono<{ Bindings: Env }>()
+  .basePath('/api/v1')
+  .get('/health', async (c) => {
+    const row = await c.env.DB.prepare('SELECT 1 AS ok').first<{ ok: number }>()
+    return c.json({
+      ok: row?.ok === 1,
+      service: 'xuanji',
+      gatewayId: c.env.AI_GATEWAY_ID,
+      model: c.env.AI_MODEL,
+    })
+  })
+  .get('/profiles', async (c) =>
+    c.json({ ok: true, data: await listProfiles(c.env.DB) }),
+  )
+  .post('/profiles', zValidator('json', profileSchema), async (c) => {
+    const input = c.req.valid('json')
+    const now = new Date().toISOString()
+    const profile: BirthProfile = {
+      id: crypto.randomUUID(),
+      ...input,
+      createdAt: now,
+      updatedAt: now,
+    }
+    await insertProfile(c.env.DB, profile)
+    return c.json({ ok: true, data: profile }, 201)
+  })
+  .post('/charts/bazi', zValidator('json', chartSchema), async (c) => {
+    const { profileId } = c.req.valid('json')
+    const profile = await getProfile(c.env.DB, profileId)
+    if (!profile)
+      return c.json(
+        {
+          ok: false,
+          error: { code: 'PROFILE_NOT_FOUND', message: '出生资料不存在' },
+        },
+        404,
+      )
+    const snapshot = await calculateBazi(profile)
+    await insertSnapshot(c.env.DB, snapshot)
+    return c.json({ ok: true, data: snapshot }, 201)
+  })
+  .get('/charts/:snapshotId', async (c) => {
+    const snapshot = await getSnapshot(c.env.DB, c.req.param('snapshotId'))
+    if (!snapshot)
+      return c.json(
+        {
+          ok: false,
+          error: { code: 'CHART_NOT_FOUND', message: '命盘不存在' },
+        },
+        404,
+      )
+    return c.json({ ok: true, data: snapshot })
+  })
+  .get('/readings', async (c) =>
+    c.json({ ok: true, data: await listReadings(c.env.DB) }),
+  )
+  .post('/readings', zValidator('json', readingSchema), async (c) => {
+    const { snapshotId } = c.req.valid('json')
+    const snapshot = await getSnapshot(c.env.DB, snapshotId)
+    if (!snapshot)
+      return c.json(
+        {
+          ok: false,
+          error: { code: 'CHART_NOT_FOUND', message: '命盘不存在' },
+        },
+        404,
+      )
+    const evaluated = evaluateSnapshot(snapshot)
+    const deterministicSummary = `日主${snapshot.facts.dayMaster}，${evaluated.dominant}元素最集中，${evaluated.weakest}元素相对少。`
+    let summary = deterministicSummary
+    try {
+      const result = await c.env.AI.run(
+        c.env.AI_MODEL,
+        {
+          messages: [
+            {
+              role: 'system',
+              content:
+                '你是玄机的命理解读助手。只根据给定命盘事实和规则写一段克制、具体、现代的中文摘要，不重新计算命盘，不使用列表，控制在180字以内。',
+            },
+            {
+              role: 'user',
+              content: JSON.stringify({
+                facts: snapshot.facts,
+                evidence: evaluated.evidence,
+              }),
+            },
+          ],
+          max_tokens: 300,
+        },
+        { gateway: { id: c.env.AI_GATEWAY_ID } },
+      )
+      const text = extractGatewayText(result)
+      if (text) summary = text
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          event: 'reading_ai_fallback',
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      )
+    }
+    const reading: Reading = {
+      id: crypto.randomUUID(),
+      snapshotId,
+      title: `${snapshot.facts.dayMaster}日主 · 玄机解读`,
+      summary,
+      sections: evaluated.sections,
+      evidence: evaluated.evidence,
+      model: c.env.AI_MODEL,
+      gatewayId: c.env.AI_GATEWAY_ID,
+      createdAt: new Date().toISOString(),
+    }
+    await insertReading(c.env.DB, reading)
+    return c.json({ ok: true, data: reading }, 201)
+  })
+  .get('/readings/:readingId', async (c) => {
+    const reading = await getReading(c.env.DB, c.req.param('readingId'))
+    if (!reading)
+      return c.json(
+        {
+          ok: false,
+          error: { code: 'READING_NOT_FOUND', message: '报告不存在' },
+        },
+        404,
+      )
+    return c.json({ ok: true, data: reading })
+  })
+
+export type AppType = typeof apiApp
