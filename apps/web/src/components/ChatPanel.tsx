@@ -97,11 +97,9 @@ export function ChatPanel({
           event.preventDefault()
           const question = input.trim()
           if (!question || busy) return
-          const context = JSON.stringify({
-            facts: snapshot.facts,
-            reading: { summary: reading.summary, evidence: reading.evidence },
+          sendMessage({
+            text: `【报告ID】${reading.id}\n【命盘ID】${snapshot.id}\n【问题】${question}`,
           })
-          sendMessage({ text: `【命盘上下文】${context}\n【问题】${question}` })
           setInput('')
         }}
       >

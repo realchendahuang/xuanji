@@ -9,15 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfilesRouteImport } from './routes/profiles'
 import { Route as MethodologyRouteImport } from './routes/methodology'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReportReportIdRouteImport } from './routes/report.$reportId'
 import { Route as ReadingReadingIdRouteImport } from './routes/reading.$readingId'
 import { Route as ProfilesNewRouteImport } from './routes/profiles.new'
+import { Route as DivinationModeRouteImport } from './routes/divination.$mode'
 import { Route as ChatConversationIdRouteImport } from './routes/chat.$conversationId'
 import { Route as ProfilesProfileIdEditRouteImport } from './routes/profiles.$profileId.edit'
 import { Route as ChartBaziSnapshotIdRouteImport } from './routes/chart.bazi.$snapshotId'
 
+const ProfilesRoute = ProfilesRouteImport.update({
+  id: '/profiles',
+  path: '/profiles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MethodologyRoute = MethodologyRouteImport.update({
   id: '/methodology',
   path: '/methodology',
@@ -33,14 +41,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportReportIdRoute = ReportReportIdRouteImport.update({
+  id: '/report/$reportId',
+  path: '/report/$reportId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReadingReadingIdRoute = ReadingReadingIdRouteImport.update({
   id: '/reading/$readingId',
   path: '/reading/$readingId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfilesNewRoute = ProfilesNewRouteImport.update({
-  id: '/profiles/new',
-  path: '/profiles/new',
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ProfilesRoute,
+} as any)
+const DivinationModeRoute = DivinationModeRouteImport.update({
+  id: '/divination/$mode',
+  path: '/divination/$mode',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
@@ -49,9 +67,9 @@ const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfilesProfileIdEditRoute = ProfilesProfileIdEditRouteImport.update({
-  id: '/profiles/$profileId/edit',
-  path: '/profiles/$profileId/edit',
-  getParentRoute: () => rootRouteImport,
+  id: '/$profileId/edit',
+  path: '/$profileId/edit',
+  getParentRoute: () => ProfilesRoute,
 } as any)
 const ChartBaziSnapshotIdRoute = ChartBaziSnapshotIdRouteImport.update({
   id: '/chart/bazi/$snapshotId',
@@ -63,9 +81,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/methodology': typeof MethodologyRoute
+  '/profiles': typeof ProfilesRouteWithChildren
   '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/divination/$mode': typeof DivinationModeRoute
   '/profiles/new': typeof ProfilesNewRoute
   '/reading/$readingId': typeof ReadingReadingIdRoute
+  '/report/$reportId': typeof ReportReportIdRoute
   '/chart/bazi/$snapshotId': typeof ChartBaziSnapshotIdRoute
   '/profiles/$profileId/edit': typeof ProfilesProfileIdEditRoute
 }
@@ -73,9 +94,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/methodology': typeof MethodologyRoute
+  '/profiles': typeof ProfilesRouteWithChildren
   '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/divination/$mode': typeof DivinationModeRoute
   '/profiles/new': typeof ProfilesNewRoute
   '/reading/$readingId': typeof ReadingReadingIdRoute
+  '/report/$reportId': typeof ReportReportIdRoute
   '/chart/bazi/$snapshotId': typeof ChartBaziSnapshotIdRoute
   '/profiles/$profileId/edit': typeof ProfilesProfileIdEditRoute
 }
@@ -84,9 +108,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/methodology': typeof MethodologyRoute
+  '/profiles': typeof ProfilesRouteWithChildren
   '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/divination/$mode': typeof DivinationModeRoute
   '/profiles/new': typeof ProfilesNewRoute
   '/reading/$readingId': typeof ReadingReadingIdRoute
+  '/report/$reportId': typeof ReportReportIdRoute
   '/chart/bazi/$snapshotId': typeof ChartBaziSnapshotIdRoute
   '/profiles/$profileId/edit': typeof ProfilesProfileIdEditRoute
 }
@@ -96,9 +123,12 @@ export interface FileRouteTypes {
     | '/'
     | '/history'
     | '/methodology'
+    | '/profiles'
     | '/chat/$conversationId'
+    | '/divination/$mode'
     | '/profiles/new'
     | '/reading/$readingId'
+    | '/report/$reportId'
     | '/chart/bazi/$snapshotId'
     | '/profiles/$profileId/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -106,9 +136,12 @@ export interface FileRouteTypes {
     | '/'
     | '/history'
     | '/methodology'
+    | '/profiles'
     | '/chat/$conversationId'
+    | '/divination/$mode'
     | '/profiles/new'
     | '/reading/$readingId'
+    | '/report/$reportId'
     | '/chart/bazi/$snapshotId'
     | '/profiles/$profileId/edit'
   id:
@@ -116,9 +149,12 @@ export interface FileRouteTypes {
     | '/'
     | '/history'
     | '/methodology'
+    | '/profiles'
     | '/chat/$conversationId'
+    | '/divination/$mode'
     | '/profiles/new'
     | '/reading/$readingId'
+    | '/report/$reportId'
     | '/chart/bazi/$snapshotId'
     | '/profiles/$profileId/edit'
   fileRoutesById: FileRoutesById
@@ -127,15 +163,23 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
   MethodologyRoute: typeof MethodologyRoute
+  ProfilesRoute: typeof ProfilesRouteWithChildren
   ChatConversationIdRoute: typeof ChatConversationIdRoute
-  ProfilesNewRoute: typeof ProfilesNewRoute
+  DivinationModeRoute: typeof DivinationModeRoute
   ReadingReadingIdRoute: typeof ReadingReadingIdRoute
+  ReportReportIdRoute: typeof ReportReportIdRoute
   ChartBaziSnapshotIdRoute: typeof ChartBaziSnapshotIdRoute
-  ProfilesProfileIdEditRoute: typeof ProfilesProfileIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profiles': {
+      id: '/profiles'
+      path: '/profiles'
+      fullPath: '/profiles'
+      preLoaderRoute: typeof ProfilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/methodology': {
       id: '/methodology'
       path: '/methodology'
@@ -157,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/report/$reportId': {
+      id: '/report/$reportId'
+      path: '/report/$reportId'
+      fullPath: '/report/$reportId'
+      preLoaderRoute: typeof ReportReportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reading/$readingId': {
       id: '/reading/$readingId'
       path: '/reading/$readingId'
@@ -166,9 +217,16 @@ declare module '@tanstack/react-router' {
     }
     '/profiles/new': {
       id: '/profiles/new'
-      path: '/profiles/new'
+      path: '/new'
       fullPath: '/profiles/new'
       preLoaderRoute: typeof ProfilesNewRouteImport
+      parentRoute: typeof ProfilesRoute
+    }
+    '/divination/$mode': {
+      id: '/divination/$mode'
+      path: '/divination/$mode'
+      fullPath: '/divination/$mode'
+      preLoaderRoute: typeof DivinationModeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat/$conversationId': {
@@ -180,10 +238,10 @@ declare module '@tanstack/react-router' {
     }
     '/profiles/$profileId/edit': {
       id: '/profiles/$profileId/edit'
-      path: '/profiles/$profileId/edit'
+      path: '/$profileId/edit'
       fullPath: '/profiles/$profileId/edit'
       preLoaderRoute: typeof ProfilesProfileIdEditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ProfilesRoute
     }
     '/chart/bazi/$snapshotId': {
       id: '/chart/bazi/$snapshotId'
@@ -195,15 +253,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ProfilesRouteChildren {
+  ProfilesNewRoute: typeof ProfilesNewRoute
+  ProfilesProfileIdEditRoute: typeof ProfilesProfileIdEditRoute
+}
+
+const ProfilesRouteChildren: ProfilesRouteChildren = {
+  ProfilesNewRoute: ProfilesNewRoute,
+  ProfilesProfileIdEditRoute: ProfilesProfileIdEditRoute,
+}
+
+const ProfilesRouteWithChildren = ProfilesRoute._addFileChildren(
+  ProfilesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
   MethodologyRoute: MethodologyRoute,
+  ProfilesRoute: ProfilesRouteWithChildren,
   ChatConversationIdRoute: ChatConversationIdRoute,
-  ProfilesNewRoute: ProfilesNewRoute,
+  DivinationModeRoute: DivinationModeRoute,
   ReadingReadingIdRoute: ReadingReadingIdRoute,
+  ReportReportIdRoute: ReportReportIdRoute,
   ChartBaziSnapshotIdRoute: ChartBaziSnapshotIdRoute,
-  ProfilesProfileIdEditRoute: ProfilesProfileIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

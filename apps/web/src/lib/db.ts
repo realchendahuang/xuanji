@@ -1,4 +1,10 @@
-import type { BirthProfile, ChartSnapshot, Reading } from './types'
+import type {
+  BirthProfile,
+  ChartSnapshot,
+  Reading,
+  UniversalReport,
+  UniversalSnapshot,
+} from './types'
 
 type ProfileRow = {
   id: string
@@ -311,4 +317,168 @@ export async function getReading(db: D1Database, id: string) {
     gatewayId: row.gateway_id,
     createdAt: row.created_at,
   } satisfies Reading
+}
+
+export async function insertUniversalSnapshot(
+  db: D1Database,
+  snapshot: UniversalSnapshot,
+) {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO divination_snapshots
+       (id, profile_id, secondary_profile_id, mode, input_hash, engine_id, engine_version, methodology_json, facts_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      snapshot.id,
+      snapshot.profileId,
+      snapshot.secondaryProfileId ?? null,
+      snapshot.mode,
+      snapshot.inputHash,
+      snapshot.engineId,
+      snapshot.engineVersion,
+      JSON.stringify(snapshot.methodology),
+      JSON.stringify(snapshot.facts),
+      snapshot.createdAt,
+    )
+    .run()
+  return (
+    (await getUniversalSnapshotByHash(db, snapshot.mode, snapshot.inputHash)) ??
+    snapshot
+  )
+}
+
+function universalSnapshotFromRow(row: {
+  id: string
+  profile_id: string | null
+  secondary_profile_id: string | null
+  mode: UniversalSnapshot['mode']
+  input_hash: string
+  engine_id: string
+  engine_version: string
+  methodology_json: string
+  facts_json: string
+  created_at: string
+}) {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    secondaryProfileId: row.secondary_profile_id,
+    mode: row.mode,
+    inputHash: row.input_hash,
+    engineId: row.engine_id,
+    engineVersion: row.engine_version,
+    methodology: JSON.parse(row.methodology_json),
+    facts: JSON.parse(row.facts_json),
+    createdAt: row.created_at,
+  } satisfies UniversalSnapshot
+}
+
+export async function getUniversalSnapshot(db: D1Database, id: string) {
+  const row = await db
+    .prepare('SELECT * FROM divination_snapshots WHERE id = ?')
+    .bind(id)
+    .first<Parameters<typeof universalSnapshotFromRow>[0]>()
+  return row ? universalSnapshotFromRow(row) : null
+}
+
+export async function getUniversalSnapshotByHash(
+  db: D1Database,
+  mode: UniversalSnapshot['mode'],
+  inputHash: string,
+) {
+  const row = await db
+    .prepare(
+      'SELECT * FROM divination_snapshots WHERE mode = ? AND input_hash = ?',
+    )
+    .bind(mode, inputHash)
+    .first<Parameters<typeof universalSnapshotFromRow>[0]>()
+  return row ? universalSnapshotFromRow(row) : null
+}
+
+export async function listUniversalSnapshots(db: D1Database) {
+  const result = await db
+    .prepare(
+      `SELECT divination_snapshots.*, birth_profiles.name AS profile_name,
+       secondary.name AS secondary_profile_name
+       FROM divination_snapshots
+       LEFT JOIN birth_profiles ON birth_profiles.id = divination_snapshots.profile_id
+       LEFT JOIN birth_profiles secondary ON secondary.id = divination_snapshots.secondary_profile_id
+       ORDER BY divination_snapshots.created_at DESC`,
+    )
+    .all<Parameters<typeof universalSnapshotFromRow>[0] & {
+      profile_name: string | null
+      secondary_profile_name: string | null
+    }>()
+  return result.results.map((row) => ({
+    ...universalSnapshotFromRow(row),
+    profileName: row.profile_name,
+    secondaryProfileName: row.secondary_profile_name,
+  }))
+}
+
+export async function insertUniversalReport(
+  db: D1Database,
+  report: UniversalReport,
+) {
+  await db
+    .prepare(
+      `INSERT INTO universal_reports
+       (id, mode, snapshot_ids_json, title, summary, content_json, model, gateway_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      report.id,
+      report.mode,
+      JSON.stringify(report.snapshotIds),
+      report.title,
+      report.summary,
+      JSON.stringify({ sections: report.sections, evidence: report.evidence }),
+      report.model,
+      report.gatewayId,
+      report.createdAt,
+    )
+    .run()
+}
+
+export async function getUniversalReport(db: D1Database, id: string) {
+  const row = await db
+    .prepare('SELECT * FROM universal_reports WHERE id = ?')
+    .bind(id)
+    .first<{
+      id: string
+      mode: UniversalReport['mode']
+      snapshot_ids_json: string
+      title: string
+      summary: string
+      content_json: string
+      model: string
+      gateway_id: string
+      created_at: string
+    }>()
+  if (!row) return null
+  const content = JSON.parse(row.content_json) as Pick<
+    UniversalReport,
+    'sections' | 'evidence'
+  >
+  return {
+    id: row.id,
+    mode: row.mode,
+    snapshotIds: JSON.parse(row.snapshot_ids_json),
+    title: row.title,
+    summary: row.summary,
+    ...content,
+    model: row.model,
+    gatewayId: row.gateway_id,
+    createdAt: row.created_at,
+  } satisfies UniversalReport
+}
+
+export async function listUniversalReports(db: D1Database) {
+  const rows = await db
+    .prepare('SELECT id FROM universal_reports ORDER BY created_at DESC')
+    .all<{ id: string }>()
+  return (
+    await Promise.all(rows.results.map((row) => getUniversalReport(db, row.id)))
+  ).filter(Boolean)
 }

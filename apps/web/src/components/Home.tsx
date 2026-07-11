@@ -31,6 +31,9 @@ export function Home() {
   const [reading, setReading] = useState<Reading | null>(null)
   const [status, setStatus] = useState<'idle' | 'chart' | 'reading'>('idle')
   const [error, setError] = useState('')
+  const [locationResults, setLocationResults] = useState<
+    Awaited<ReturnType<typeof api.searchLocations>>
+  >([])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -108,12 +111,12 @@ export function Home() {
           </label>
           <label>
             出生地点
-            <input
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="城市"
-            />
+            <div className="location-search-row">
+              <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="城市" />
+              <button type="button" onClick={() => api.searchLocations(location).then(setLocationResults)}>搜索</button>
+            </div>
           </label>
+          {locationResults.length ? <div className="location-results">{locationResults.map((item) => <button type="button" key={item.id} onClick={() => { setLocation(item.label); setLatitude(item.latitude); setLongitude(item.longitude); setTimeZone(item.timeZone); setLocationResults([]) }}>{item.label}<small>{item.latitude.toFixed(3)}, {item.longitude.toFixed(3)} · {item.timeZone}</small></button>)}</div> : null}
           <div className="coordinate-grid">
             <label>
               纬度

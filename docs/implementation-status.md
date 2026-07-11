@@ -1,4 +1,4 @@
-# XuanJi MVP implementation status
+# XuanJi implementation status
 
 This file maps the executable P0 baseline in `ai-fortune-cloudflare-prd-tdd-v1.0.md` to current evidence.
 
@@ -19,4 +19,17 @@ This file maps the executable P0 baseline in `ai-fortune-cloudflare-prd-tdd-v1.0
 | Tests                        | Golden calculation, DST, true-solar, rule, model-adapter, D1 repository and Hono contract tests.                      |
 | Open-source deployment       | Wrangler config, `.dev.vars.example`, Gateway setup script, migrations, README and GitHub CI.                         |
 
-P1 features such as Western astrology, daily readings, SVG, share images and PDF remain intentionally outside the P0 completion boundary.
+## Complete single-owner platform
+
+The repository now also contains:
+
+- Astronomy Engine based Western natal planets, aspects, chart SVG and current transits.
+- iztro based Zi Wei Dou Shu palaces, stars, transformations and decadal ranges.
+- Seeded 78-card Tarot spreads and six-line I Ching casting.
+- BaZi and Western dual-system compatibility plus multi-snapshot comprehensive reports.
+- Per-profile daily readings cached in KV.
+- Cross-system history, unified reports, downloadable SVG share cards and print-to-PDF output.
+- Location search that writes matching coordinates and IANA timezone instead of silently retaining Shanghai defaults.
+- Cloudflare Access as the external single-owner authentication boundary; no internal account/admin system.
+
+Payments, membership, quotas, admin, moderation and multi-user collaboration are intentionally excluded from the product definition.

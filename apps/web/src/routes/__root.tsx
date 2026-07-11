@@ -18,7 +18,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: '玄机 XuanJi · AI 八字排盘',
+        title: '玄机 XuanJi · 个人命理工作台',
       },
     ],
     links: [
@@ -45,12 +45,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </Link>
           <nav aria-label="主导航">
             <Link to="/" activeOptions={{ exact: true }}>
-              排盘
+              工作台
             </Link>
+            <Link to="/profiles">档案</Link>
             <Link to="/history">历史</Link>
             <Link to="/methodology">方法</Link>
           </nav>
-          <Link className="header-action" to="/">
+          <Link className="header-action" to="/profiles/new">
             新建命盘
           </Link>
         </header>

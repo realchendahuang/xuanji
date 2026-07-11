@@ -3,6 +3,8 @@ import type {
   BirthProfile,
   ChartSnapshot,
   Reading,
+  UniversalReport,
+  UniversalSnapshot,
 } from './types'
 
 type ApiSuccess<T> = { ok: true; data: T }
@@ -21,6 +23,9 @@ async function request<T>(path: string, init?: RequestInit) {
 }
 
 export const api = {
+  searchLocations(query: string) {
+    return request<Array<{ id: number; label: string; latitude: number; longitude: number; timeZone: string }>>(`/locations/search?q=${encodeURIComponent(query)}`)
+  },
   createProfile(input: Omit<BirthProfile, 'id' | 'createdAt' | 'updatedAt'>) {
     return request<BirthProfile>('/profiles', {
       method: 'POST',
@@ -97,5 +102,38 @@ export const api = {
   },
   getReading(readingId: string) {
     return request<Reading>(`/readings/${readingId}`)
+  },
+  listProfiles() {
+    return request<BirthProfile[]>('/profiles')
+  },
+  createDivination(mode: 'western' | 'ziwei' | 'daily', profileId: string, extra: Record<string, unknown> = {}) {
+    return request<UniversalSnapshot>(`/divinations/${mode}`, { method: 'POST', body: JSON.stringify({ profileId, ...extra }) })
+  },
+  createTransit(profileId: string, natalSnapshotId: string, date?: string) {
+    return request<UniversalSnapshot>('/divinations/transit', { method: 'POST', body: JSON.stringify({ profileId, natalSnapshotId, date }) })
+  },
+  drawTarot(question: string, spread: 'single' | 'three' | 'celtic-cross') {
+    return request<UniversalSnapshot>('/divinations/tarot', { method: 'POST', body: JSON.stringify({ question, spread }) })
+  },
+  castIChing(question: string, method: 'numbers' | 'random', numbers?: number[]) {
+    return request<UniversalSnapshot>('/divinations/iching', { method: 'POST', body: JSON.stringify({ question, method, numbers }) })
+  },
+  createCompatibility(primaryProfileId: string, secondaryProfileId: string) {
+    return request<UniversalSnapshot>('/divinations/compatibility', { method: 'POST', body: JSON.stringify({ primaryProfileId, secondaryProfileId }) })
+  },
+  listDivinations() {
+    return request<Array<UniversalSnapshot & { profileName?: string; secondaryProfileName?: string }>>('/divinations')
+  },
+  getDivination(snapshotId: string) {
+    return request<UniversalSnapshot>(`/divinations/${snapshotId}`)
+  },
+  createUniversalReport(snapshotIds: string[]) {
+    return request<UniversalReport>('/reports', { method: 'POST', body: JSON.stringify({ snapshotIds }) })
+  },
+  listUniversalReports() {
+    return request<UniversalReport[]>('/reports')
+  },
+  getUniversalReport(reportId: string) {
+    return request<UniversalReport>(`/reports/${reportId}`)
   },
 }

@@ -1,8 +1,8 @@
 # XuanJi（玄机）
 
-XuanJi is an open-source AI fortune-reading platform built as a single Cloudflare full-stack application.
+XuanJi is a private, single-owner AI divination workspace built as a single Cloudflare full-stack application.
 
-The MVP starts with one complete path: deterministic BaZi calculation, structured evidence, AI-generated reading, and follow-up chat. Western astrology and daily readings come after the first path is stable.
+The application combines deterministic BaZi, Western astrology and transits, Zi Wei Dou Shu, Tarot, I Ching, compatibility, daily guidance, structured evidence, AI-generated readings and follow-up chat.
 
 ## Core idea
 
@@ -26,8 +26,14 @@ The model does not calculate pillars, solar terms, houses, or aspects.
 - Reading history
 - Golden cases and deterministic tests
 - Dedicated Cloudflare AI Gateway
+- Western natal chart and current transits
+- Zi Wei Dou Shu twelve-palace chart
+- 78-card Tarot spreads and I Ching casting
+- BaZi and Western compatibility
+- Daily readings and comprehensive reports
+- SVG share cards and printable PDF reports
 
-Not included in the first MVP: payments, admin systems, generalized RAG, or multiple divination systems at once.
+Not included: payments, memberships, public accounts, admin systems, moderation, multi-tenant collaboration or generalized RAG.
 
 ## Architecture
 
@@ -124,6 +130,8 @@ Dedicated Cloudflare resources used by production:
 
 Production: [xuanji.chendanhuang31016.workers.dev](https://xuanji.chendanhuang31016.workers.dev)
 
+The custom domain `xuanji.chendahuang.com` is intended to be protected by Cloudflare Access with a single email allow-list policy. The Worker itself never implements a second user-management system.
+
 ## Documentation
 
 - [MVP PRD and TDD](docs/ai-fortune-cloudflare-prd-tdd-v1.0.md)
@@ -133,4 +141,4 @@ Production: [xuanji.chendanhuang31016.workers.dev](https://xuanji.chendanhuang31
 
 ## Status
 
-The first complete BaZi MVP path is implemented and deployed: birth profile, deterministic four-pillar calculation, evidence, AI reading through the dedicated Gateway, history, and stateful follow-up chat.
+The single-owner platform includes the complete set of calculation, question, compatibility, history, report and export surfaces described above. Production deployment uses the dedicated XuanJi AI Gateway and Cloudflare data services.
