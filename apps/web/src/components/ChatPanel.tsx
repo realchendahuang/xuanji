@@ -15,6 +15,33 @@ function visibleUserText(text: string) {
   return text.includes(marker) ? (text.split(marker).at(-1) ?? text) : text
 }
 
+export function normalizeCumulativeStreamText(text: string) {
+  const characters = Array.from(text)
+  let result = ''
+  for (let index = 0; index < characters.length;) {
+    let duplicateLength = 0
+    const max = Math.min(8, Math.floor((characters.length - index) / 2))
+    for (let length = max; length >= 1; length -= 1) {
+      const left = characters.slice(index, index + length).join('')
+      const right = characters
+        .slice(index + length, index + length * 2)
+        .join('')
+      if (left === right) {
+        duplicateLength = length
+        break
+      }
+    }
+    if (duplicateLength) {
+      result += characters.slice(index, index + duplicateLength).join('')
+      index += duplicateLength * 2
+    } else {
+      result += characters[index]
+      index += 1
+    }
+  }
+  return result
+}
+
 export function ChatPanel({
   reading,
   snapshot,
@@ -55,7 +82,7 @@ export function ChatPanel({
                     <p key={`${message.id}-${index}`}>
                       {message.role === 'user'
                         ? visibleUserText(part.text ?? '')
-                        : part.text}
+                        : normalizeCumulativeStreamText(part.text ?? '')}
                     </p>
                   ) : null,
                 )}

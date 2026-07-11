@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { Solar } from 'lunar-javascript'
 import { calculateBazi } from './bazi'
 import type { BirthProfile } from './types'
 
@@ -38,6 +39,21 @@ describe('calculateBazi', () => {
     expect(snapshot.facts.luckCycle.direction).toBe('backward')
     expect(snapshot.facts.luckCycle.startAge).toBeGreaterThan(0)
     expect(snapshot.facts.luckCycle.decades).toHaveLength(8)
+  })
+
+  it('cross-validates the golden case with an independent calendar engine', async () => {
+    const snapshot = await calculateBazi(profile)
+    const independent = Solar.fromYmdHms(1990, 1, 1, 12, 0, 0)
+      .getLunar()
+      .getEightChar()
+    expect(
+      snapshot.facts.pillars.map(({ stem, branch }) => `${stem}${branch}`),
+    ).toEqual([
+      independent.getYear(),
+      independent.getMonth(),
+      independent.getDay(),
+      independent.getTime(),
+    ])
   })
 
   it('counts the visible stem and branch elements', async () => {

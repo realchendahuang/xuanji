@@ -651,6 +651,14 @@ a {
   padding: 26px 0;
   border-bottom: 1px solid var(--line);
 }
+.history-card-link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+.history-card-link:hover article {
+  border-color: var(--accent);
+}
 .history-list span {
   color: var(--accent);
   font-size: 10px;

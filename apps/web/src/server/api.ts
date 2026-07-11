@@ -207,12 +207,12 @@ export const apiApp = new Hono<{ Bindings: Env }>()
         404,
       )
     return streamSSE(c, async (stream) => {
+      const reading = await generateReading(c.env, snapshot)
+      await insertReading(c.env.DB, reading)
       await stream.writeSSE({
         event: 'status',
         data: JSON.stringify({ phase: 'interpreting' }),
       })
-      const reading = await generateReading(c.env, snapshot)
-      await insertReading(c.env.DB, reading)
       await stream.writeSSE({
         event: 'reading',
         data: JSON.stringify({ ok: true, data: reading }),

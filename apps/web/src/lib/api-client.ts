@@ -72,6 +72,8 @@ export const api = {
       const { done, value } = await reader.read()
       streamDone = done
       buffer += decoder.decode(value, { stream: !streamDone })
+      buffer = buffer.replaceAll('\r\n', '\n')
+      if (streamDone && buffer.trim()) buffer += '\n\n'
       const events = buffer.split('\n\n')
       buffer = events.pop() ?? ''
       for (const event of events) {

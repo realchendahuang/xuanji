@@ -35,14 +35,23 @@ function HistoryPage() {
       ) : (
         <div className="history-list">
           {readings.map((reading) => (
-            <article key={reading.id}>
-              <div>
-                <span>{reading.profileName}</span>
-                <h2>{reading.title}</h2>
-                <p>{reading.summary}</p>
-              </div>
-              <time>{new Date(reading.createdAt).toLocaleString('zh-CN')}</time>
-            </article>
+            <Link
+              className="history-card-link"
+              key={reading.id}
+              to="/reading/$readingId"
+              params={{ readingId: reading.id }}
+            >
+              <article>
+                <div>
+                  <span>{reading.profileName}</span>
+                  <h2>{reading.title}</h2>
+                  <p>{reading.summary}</p>
+                </div>
+                <time>
+                  {new Date(reading.createdAt).toLocaleString('zh-CN')}
+                </time>
+              </article>
+            </Link>
           ))}
         </div>
       )}

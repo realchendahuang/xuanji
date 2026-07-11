@@ -215,7 +215,7 @@ export async function insertReading(db: D1Database, reading: Reading) {
          VALUES (?, ?, ?, ?, ?, ?)`,
         )
         .bind(
-          claim.id,
+          `${reading.id}:${claim.id}`,
           reading.id,
           claim.title,
           claim.body,
