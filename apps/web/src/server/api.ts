@@ -15,7 +15,7 @@ import {
   updateProfile,
 } from '../lib/db'
 import { evaluateSnapshot } from '../lib/rules'
-import { WorkersAIGatewayAdapter } from '../lib/model'
+import { DeepSeekGatewayAdapter } from '../lib/model'
 import type { BirthProfile, Reading } from '../lib/types'
 
 const profileSchema = z.object({
@@ -56,7 +56,9 @@ async function generateReading(
   const deterministicSummary = `日主${snapshot.facts.dayMaster}，${evaluated.dominant}元素最集中，${evaluated.weakest}元素相对少。`
   let summary = deterministicSummary
   try {
-    const text = await new WorkersAIGatewayAdapter(env).generate({
+    const text = await new DeepSeekGatewayAdapter(
+      env as Env & { DEEPSEEK_API_KEY: string },
+    ).generate({
       system:
         '你是玄机的命理解读助手。只根据给定命盘事实、规则依据和 Claim 写一段克制、具体、现代的中文摘要，不重新计算命盘，不使用列表，控制在180字以内。',
       prompt: JSON.stringify({
@@ -96,6 +98,7 @@ export const apiApp = new Hono<{ Bindings: Env }>()
       ok: row?.ok === 1,
       service: 'xuanji',
       gatewayId: c.env.AI_GATEWAY_ID,
+      provider: c.env.AI_PROVIDER,
       model: c.env.AI_MODEL,
     })
   })

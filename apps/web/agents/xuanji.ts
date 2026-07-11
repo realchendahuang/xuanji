@@ -1,5 +1,5 @@
 import { Think } from '@cloudflare/think'
-import { createWorkersAI } from 'workers-ai-provider'
+import { createOpenAI } from '@ai-sdk/openai'
 import { tool } from 'ai'
 import type { ToolSet } from 'ai'
 import { z } from 'zod'
@@ -10,10 +10,11 @@ export class XuanJiAgent extends Think<Env> {
   workspaceBash = false
 
   getModel() {
-    return createWorkersAI({
-      binding: this.env.AI,
-      gateway: { id: this.env.AI_GATEWAY_ID },
-    })(this.env.AI_MODEL)
+    const env = this.env as Env & { DEEPSEEK_API_KEY: string }
+    return createOpenAI({
+      apiKey: env.DEEPSEEK_API_KEY,
+      baseURL: `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.AI_GATEWAY_ID}/deepseek`,
+    }).chat(env.AI_MODEL)
   }
 
   getTools(): ToolSet {

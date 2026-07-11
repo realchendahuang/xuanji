@@ -9,7 +9,7 @@ technology_baseline:
   api: "Hono + Hono RPC"
   agent: "Cloudflare Agents + @cloudflare/think"
   ai_gateway: "Cloudflare AI Gateway（项目专用）"
-  platform: "Cloudflare Workers / Durable Objects / D1 / R2 / KV / Workers AI"
+  platform: "Cloudflare Workers / Durable Objects / D1 / R2 / KV / DeepSeek API"
 ---
 
 # 1. 项目定义
@@ -159,7 +159,7 @@ flowchart LR
   AG --> DO[(Durable Object SQLite)]
   AG --> AIP[AI Adapter]
   AIP --> GW[XuanJi AI Gateway]
-  GW --> WAI[Workers AI]
+  GW --> DS[DeepSeek V4 Flash]
   GW --> EXT[External Provider Optional]
   AG --> CALC[Deterministic Tools]
 ```
@@ -220,16 +220,13 @@ Gateway 不拆成独立仓库或独立 Worker。Gateway 接入代码、配置示
 
 ## 7.2 调用路径
 
-Workers AI 使用 `AI` binding：
+生产环境使用 DeepSeek 官方 Token，通过专用 AI Gateway 调用：
 
 ```ts
-const gateway = env.AI.gateway(env.AI_GATEWAY_ID)
-
-const result = await gateway.run({
-  provider: 'workers-ai',
-  endpoint: env.AI_MODEL,
-  query: request,
-})
+await fetch(
+  `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.AI_GATEWAY_ID}/deepseek/chat/completions`,
+  { headers: { Authorization: `Bearer ${env.DEEPSEEK_API_KEY}` } },
+);
 ```
 
 外部模型通过相同 AI Adapter 调用 AI Gateway Universal Endpoint。领域代码和 Agent 不直接依赖具体 Provider SDK。
@@ -238,8 +235,8 @@ const result = await gateway.run({
 
 ```text
 AI_GATEWAY_ID=xuanji
-AI_PROVIDER=workers-ai
-AI_MODEL=<locked-project-model>
+AI_PROVIDER=deepseek
+AI_MODEL=deepseek-v4-flash
 AI_FALLBACK_MODEL=<optional-model>
 ```
 
@@ -303,31 +300,25 @@ xuanji/
   "ai": { "binding": "AI" },
   "vars": {
     "AI_GATEWAY_ID": "xuanji",
-    "AI_PROVIDER": "workers-ai",
-    "AI_MODEL": "<locked-project-model>"
+    "AI_PROVIDER": "deepseek",
+    "AI_MODEL": "deepseek-v4-flash",
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "xuanji",
-      "database_id": "<set-by-deployer>"
-    }
+      "database_id": "<set-by-deployer>",
+    },
   ],
   "r2_buckets": [
     { "binding": "ASSETS_BUCKET", "bucket_name": "xuanji-assets" },
-    { "binding": "SKILLS_BUCKET", "bucket_name": "xuanji-skills" }
+    { "binding": "SKILLS_BUCKET", "bucket_name": "xuanji-skills" },
   ],
-  "kv_namespaces": [
-    { "binding": "PUBLIC_CACHE", "id": "<set-by-deployer>" }
-  ],
+  "kv_namespaces": [{ "binding": "PUBLIC_CACHE", "id": "<set-by-deployer>" }],
   "durable_objects": {
-    "bindings": [
-      { "name": "XuanJiAgent", "class_name": "XuanJiAgent" }
-    ]
+    "bindings": [{ "name": "XuanJiAgent", "class_name": "XuanJiAgent" }],
   },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["XuanJiAgent"] }
-  ]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["XuanJiAgent"] }],
 }
 ```
 
@@ -337,66 +328,66 @@ xuanji/
 
 ```ts
 type BirthProfile = {
-  id: string
-  name: string
-  localDate: string
-  localTime?: string
-  timePrecision: 'exact' | 'approximate' | 'unknown'
+  id: string;
+  name: string;
+  localDate: string;
+  localTime?: string;
+  timePrecision: "exact" | "approximate" | "unknown";
   location: {
-    label: string
-    latitude: number
-    longitude: number
-    timeZone: string
-  }
-  createdAt: string
-  updatedAt: string
-}
+    label: string;
+    latitude: number;
+    longitude: number;
+    timeZone: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
 ```
 
 ## 10.2 Methodology Profile
 
 ```ts
 type BaziMethodology = {
-  yearBoundary: 'lichun' | 'lunar-new-year'
-  dayBoundary: '23:00' | '00:00'
-  timeBasis: 'civil' | 'true-solar'
-  luckCycleVersion: string
-}
+  yearBoundary: "lichun" | "lunar-new-year";
+  dayBoundary: "23:00" | "00:00";
+  timeBasis: "civil" | "true-solar";
+  luckCycleVersion: string;
+};
 ```
 
 ## 10.3 Chart Snapshot
 
 ```ts
 type ChartSnapshot<TFacts, TMethod> = {
-  id: string
-  mode: 'bazi' | 'western'
-  profileId: string
-  inputHash: string
-  engineId: string
-  engineVersion: string
-  methodology: TMethod
-  facts: TFacts
-  createdAt: string
-}
+  id: string;
+  mode: "bazi" | "western";
+  profileId: string;
+  inputHash: string;
+  engineId: string;
+  engineVersion: string;
+  methodology: TMethod;
+  facts: TFacts;
+  createdAt: string;
+};
 ```
 
 ## 10.4 Evidence 与 Claim
 
 ```ts
 type Evidence = {
-  id: string
-  factRefs: string[]
-  ruleId: string
-  ruleVersion: string
-  summary: string
-}
+  id: string;
+  factRefs: string[];
+  ruleId: string;
+  ruleVersion: string;
+  summary: string;
+};
 
 type Claim = {
-  id: string
-  title: string
-  body: string
-  evidenceIds: string[]
-}
+  id: string;
+  title: string;
+  body: string;
+  evidenceIds: string[];
+};
 ```
 
 # 11. 数据表
@@ -441,7 +432,7 @@ GET    /api/v1/daily/western/:sign          P1
 ```ts
 type ApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: { code: string; message: string } }
+  | { ok: false; error: { code: string; message: string } };
 ```
 
 # 13. 八字计算模块
@@ -461,8 +452,11 @@ type ApiResult<T> =
 
 ```ts
 interface ChineseCalendarPort {
-  getSolarTerms(year: number, timeZone: string): Promise<SolarTerm[]>
-  toGanzhi(input: NormalizedBirthTime, method: BaziMethodology): Promise<BaziFacts>
+  getSolarTerms(year: number, timeZone: string): Promise<SolarTerm[]>;
+  toGanzhi(
+    input: NormalizedBirthTime,
+    method: BaziMethodology,
+  ): Promise<BaziFacts>;
 }
 ```
 
@@ -483,11 +477,11 @@ interface ChineseCalendarPort {
 
 ```ts
 type Rule<TFacts> = {
-  id: string
-  version: string
-  mode: 'bazi' | 'western'
-  evaluate(facts: TFacts): Evidence[]
-}
+  id: string;
+  version: string;
+  mode: "bazi" | "western";
+  evaluate(facts: TFacts): Evidence[];
+};
 ```
 
 P0 先实现 30–50 条高质量八字核心规则，不追求一次覆盖全部传统条目。
@@ -537,8 +531,8 @@ Skill 不实现排盘算法。
 
 ```ts
 interface ModelPort {
-  stream(request: ModelRequest): Promise<ReadableStream<ModelChunk>>
-  generateObject<T>(request: StructuredModelRequest<T>): Promise<T>
+  stream(request: ModelRequest): Promise<ReadableStream<ModelChunk>>;
+  generateObject<T>(request: StructuredModelRequest<T>): Promise<T>;
 }
 ```
 
@@ -630,7 +624,7 @@ interface ModelPort {
 
 - [ ] 创建 `packages/ai`。
 - [ ] 定义 `ModelPort`。
-- [ ] 实现 Workers AI Gateway Adapter。
+- [x] 实现 DeepSeek V4 Flash 专用 AI Gateway Adapter。
 - [ ] 增加外部 Provider Adapter 入口。
 - [ ] 创建 `scripts/setup-ai-gateway.ts`。
 - [ ] 增加 `.dev.vars.example`。
@@ -668,20 +662,20 @@ interface ModelPort {
 
 # 20. 已确定决策
 
-| 决策 | 结论 |
-|---|---|
-| 项目形态 | 独立开源仓库 |
-| 部署形态 | 单 Cloudflare Worker |
-| 首个深度模块 | 八字 |
-| 核心计算 | 确定性 TypeScript 工具 |
-| AI 职责 | 解释 Facts、Rules 和 Evidence |
-| Agent | 单 `XuanJiAgent` |
-| 业务 API | Hono + Hono RPC |
-| 前端 | TanStack Start |
-| AI Gateway | 每个部署使用 XuanJi 专用 Gateway |
-| Gateway 仓库 | 不拆仓库，配置和脚本放在 XuanJi |
-| 数据 | D1 存业务数据，DO 存 Agent 对话 |
-| Skill | 只负责知识与解释，不负责计算 |
+| 决策         | 结论                               |
+| ------------ | ---------------------------------- |
+| 项目形态     | 独立开源仓库                       |
+| 部署形态     | 单 Cloudflare Worker               |
+| 首个深度模块 | 八字                               |
+| 核心计算     | 确定性 TypeScript 工具             |
+| AI 职责      | 解释 Facts、Rules 和 Evidence      |
+| Agent        | 单 `XuanJiAgent`                   |
+| 业务 API     | Hono + Hono RPC                    |
+| 前端         | TanStack Start                     |
+| AI Gateway   | 每个部署使用 XuanJi 专用 Gateway   |
+| Gateway 仓库 | 不拆仓库，配置和脚本放在 XuanJi    |
+| 数据         | D1 存业务数据，DO 存 Agent 对话    |
+| Skill        | 只负责知识与解释，不负责计算       |
 | MVP 工程策略 | 主要功能优先，不建设账户和治理系统 |
 
 # 21. 开工顺序

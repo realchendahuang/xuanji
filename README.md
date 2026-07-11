@@ -40,7 +40,7 @@ One Cloudflare Worker handles the full application:
 - Durable Object SQLite for Agent conversations
 - R2 for skills and generated assets
 - KV / Cache API for public daily content
-- Workers AI through a project-specific AI Gateway
+- DeepSeek through a project-specific AI Gateway
 
 ```text
 Browser
@@ -53,7 +53,7 @@ Browser
 XuanJiAgent
   -> packages/ai
      -> dedicated XuanJi AI Gateway
-        -> Workers AI / optional external provider
+        -> DeepSeek V4 Flash
 ```
 
 ## Dedicated AI Gateway
@@ -66,11 +66,11 @@ Runtime configuration:
 
 ```text
 AI_GATEWAY_ID=xuanji
-AI_PROVIDER=workers-ai
-AI_MODEL=@cf/meta/llama-3.1-8b-instruct-fast
+AI_PROVIDER=deepseek
+AI_MODEL=deepseek-v4-flash
 ```
 
-Workers AI uses the Worker AI binding, so the deployed application does not need a separate provider token. Wrangler authentication is only needed by maintainers when creating resources or deploying.
+Production uses a DeepSeek API token stored as the Cloudflare Worker secret `DEEPSEEK_API_KEY`. Both reports and follow-up chat go through Gateway `xuanji`; Cloudflare Workers AI is not used.
 
 ## Repository structure
 

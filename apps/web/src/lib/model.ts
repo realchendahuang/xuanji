@@ -26,21 +26,40 @@ export function extractModelText(payload: unknown): string {
   return ''
 }
 
-export class WorkersAIGatewayAdapter implements ModelPort {
-  constructor(private env: Pick<Env, 'AI' | 'AI_MODEL' | 'AI_GATEWAY_ID'>) {}
+type DeepSeekEnv = {
+  CF_ACCOUNT_ID: string
+  AI_GATEWAY_ID: string
+  AI_MODEL: string
+  DEEPSEEK_API_KEY: string
+}
+
+export class DeepSeekGatewayAdapter implements ModelPort {
+  constructor(private env: DeepSeekEnv) {}
   async generate(request: ModelRequest) {
-    const result = await this.env.AI.run(
-      this.env.AI_MODEL,
+    const response = await fetch(
+      `https://gateway.ai.cloudflare.com/v1/${this.env.CF_ACCOUNT_ID}/${this.env.AI_GATEWAY_ID}/deepseek/chat/completions`,
       {
-        messages: [
-          { role: 'system', content: request.system },
-          { role: 'user', content: request.prompt },
-        ],
-        max_tokens: request.maxTokens ?? 300,
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.env.DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.env.AI_MODEL,
+          thinking: { type: 'disabled' },
+          messages: [
+            { role: 'system', content: request.system },
+            { role: 'user', content: request.prompt },
+          ],
+          max_tokens: request.maxTokens ?? 300,
+        }),
       },
-      { gateway: { id: this.env.AI_GATEWAY_ID } },
     )
-    return extractModelText(result)
+    if (!response.ok)
+      throw new Error(
+        `DeepSeek Gateway ${response.status}: ${await response.text()}`,
+      )
+    return extractModelText(await response.json())
   }
 }
 

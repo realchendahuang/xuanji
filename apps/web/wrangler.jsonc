@@ -9,12 +9,10 @@
     "head_sampling_rate": 1,
   },
   "vars": {
+    "CF_ACCOUNT_ID": "4637564ffe56fa1147f68c2c3a7d4772",
     "AI_GATEWAY_ID": "xuanji",
-    "AI_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
-  },
-  "ai": {
-    "binding": "AI",
-    "remote": true,
+    "AI_PROVIDER": "deepseek",
+    "AI_MODEL": "deepseek-v4-flash",
   },
   "d1_databases": [
     {
