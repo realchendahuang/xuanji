@@ -8,6 +8,12 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
+  "routes": [
+    {
+      "pattern": "xuanji.chendahuang.com",
+      "custom_domain": true,
+    },
+  ],
   "vars": {
     "CF_ACCOUNT_ID": "4637564ffe56fa1147f68c2c3a7d4772",
     "AI_GATEWAY_ID": "xuanji",
